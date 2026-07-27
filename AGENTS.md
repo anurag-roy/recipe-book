@@ -229,3 +229,21 @@ export default authRouter;
 **Database**: Use `db` from `@server/db/index.ts`; schema in `@server/db/schema.ts`
 
 **Errors & config**: `@server/middlewares/validator` for validation, `HTTPException` for API errors, `@server/lib/logger` for logging, `@server/lib/env` for environment variables
+
+## Cursor Cloud specific instructions
+
+Runtime is **Bun** (not Node), despite the generic template text above. `bun` is installed to `~/.bun/bin` and symlinked at `/usr/local/bin/bun`. The startup update script runs `bun install` (root) and `bun install --cwd client`.
+
+Services (see README/`package.json` for the canonical commands):
+
+| Service | Command | Port | Notes |
+| --- | --- | --- | --- |
+| API (Hono, Bun) | `bun run dev` | 3000 | Boots the in-process import worker; serves `/api/*`. Health: `GET /api/settings/status`. |
+| Client (Vite/React) | `bun run dev:client` | 5173 | Vite proxies `/api` → `http://localhost:3000`. Use this URL for UI testing. |
+
+Non-obvious caveats:
+- `.env` is required (server runs with `--env-file=.env`). Copy it once with `cp .env.example .env`; defaults in `server/lib/env.ts` let the server boot with no external keys.
+- Migrations use a **custom runner** `bun run db:migrate` (reads `drizzle/*.sql`), NOT `drizzle-kit migrate`. It is idempotent. `bun run db:seed` inserts one sample recipe and is a no-op if any recipe already exists. Run these only when the schema/seed changes; the SQLite file at `.data/database.db` persists in the snapshot.
+- **MinIO / S3 image storage** requires Docker (`docker compose up minio minio-init`), and Docker is NOT installed here. The core recipe library (create/edit/list/search) works fully without it; only recipe image upload/serve needs MinIO.
+- OpenAI recipe-import (`OPENAI_API_KEY`) and Swiggy cart-sync (Swiggy OAuth/MCP) are feature-gated external integrations; they are not needed to run or test the core app.
+- Lint (`bun run lint`) currently reports one pre-existing error in `server/services/swiggy/food.ts` plus fast-refresh warnings; this is unrelated to environment setup. Server and client typecheck (`bun run typecheck`, `bun run --cwd client typecheck`) pass cleanly.
