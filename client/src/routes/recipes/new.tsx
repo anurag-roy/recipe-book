@@ -1,9 +1,10 @@
 import { AppShell } from '@client/components/app-shell';
 import { RecipeForm, formToPayload } from '@client/components/recipe-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@client/components/ui/card';
+import { Button } from '@client/components/ui/button';
 import { createRecipe } from '@client/lib/recipes';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { ArrowLeftIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/recipes/new')({
@@ -24,15 +25,18 @@ function NewRecipePage() {
   });
 
   return (
-    <AppShell title='New recipe'>
-      <Card className='mx-auto max-w-3xl'>
-        <CardHeader>
-          <CardTitle>Create recipe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RecipeForm submitting={mutation.isPending} onSubmit={(form) => mutation.mutate(formToPayload(form))} />
-        </CardContent>
-      </Card>
+    <AppShell
+      title='New recipe'
+      subtitle='Add a dish to your library'
+      back={
+        <Button render={<Link to='/' />} size='icon-sm' variant='ghost' aria-label='Back' className='-ml-1'>
+          <ArrowLeftIcon />
+        </Button>
+      }
+    >
+      <section className='mx-auto max-w-3xl rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-6'>
+        <RecipeForm submitting={mutation.isPending} onSubmit={(form) => mutation.mutate(formToPayload(form))} />
+      </section>
     </AppShell>
   );
 }

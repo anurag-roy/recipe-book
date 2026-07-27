@@ -1,0 +1,55 @@
+.DetachedSheet-view {
+  z-index: 50;
+  height: calc(var(--silk-100-lvh-dvh-pct) + 60px);
+}
+
+.DetachedSheet-view.contentPlacement-center {
+  height: 100dvh;
+}
+
+.DetachedSheet-content {
+  box-sizing: border-box;
+  width: min(100%, 34rem);
+  height: auto;
+  max-height: min(88dvh, 860px);
+  min-height: 8rem;
+  background-color: transparent;
+  padding-inline: 0.5rem;
+  padding-block: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+}
+
+.DetachedSheet-view.contentPlacement-center .DetachedSheet-content {
+  padding-block: 1rem;
+}
+
+.DetachedSheet-innerContent {
+  height: 100%;
+  max-height: inherit;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow:
+    0 20px 40px rgb(0 0 0 / 0.12),
+    0 2px 8px rgb(0 0 0 / 0.06);
+  outline: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+}
+
+.DetachedSheet-handle {
+  width: 2.75rem;
+  height: 0.3125rem;
+  margin: 0.625rem auto 0.125rem;
+  border: 0;
+  border-radius: 9999px;
+  background-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .DetachedSheet-handle {
+    display: none;
+  }
+}

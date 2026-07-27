@@ -1,26 +1,20 @@
+import { AppShell } from '@client/components/app-shell';
 import { Button } from '@client/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@client/components/ui/card';
 import { Link } from '@tanstack/react-router';
-import { XCircleIcon } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 
 export function NotFound() {
   return (
-    <div className='flex h-full items-center justify-center'>
-      <Card className='w-full max-w-lg py-12'>
-        <CardHeader className='pb-8'>
-          <CardTitle className='flex items-center justify-center text-4xl font-bold text-destructive'>
-            <XCircleIcon className='mr-2' size={36} />
-            404 - Not Found
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-1 text-center'>
-          <p>Oops! The page you're looking for doesn't exist.</p>
-          <p className='text-sm text-muted-foreground'>It might have been moved or deleted.</p>
-        </CardContent>
-        <CardFooter className='flex justify-center pt-8'>
-          <Button render={<Link to='/'>Go back home</Link>} />
-        </CardFooter>
-      </Card>
-    </div>
+    <AppShell title='Not found' subtitle='This page does not exist'>
+      <section className='mx-auto flex max-w-md flex-col items-center rounded-[1.75rem] bg-card px-6 py-14 text-center shadow-sm ring-1 ring-foreground/5'>
+        <p className='font-heading text-5xl font-semibold tracking-tight text-primary'>404</p>
+        <h2 className='mt-3 font-heading text-lg font-semibold tracking-tight'>Page missing</h2>
+        <p className='mt-2 text-sm text-muted-foreground'>It may have been moved, renamed, or never existed.</p>
+        <Button render={<Link to='/' />} className='mt-6'>
+          <ArrowLeftIcon />
+          Back to recipes
+        </Button>
+      </section>
+    </AppShell>
   );
 }

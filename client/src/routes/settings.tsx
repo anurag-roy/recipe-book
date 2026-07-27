@@ -1,6 +1,7 @@
 import { AppShell } from '@client/components/app-shell';
+import { ConfirmSheet } from '@client/components/confirm-sheet';
+import { Badge } from '@client/components/ui/badge';
 import { Button } from '@client/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@client/components/ui/card';
 import {
   disconnectSwiggy,
   setPreferredAddress,
@@ -8,8 +9,11 @@ import {
   swiggyAddressesQueryOptions,
   swiggyStatusQueryOptions,
 } from '@client/lib/swiggy';
+import { cn } from '@client/lib/utils';
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
+import { CheckIcon, MapPinIcon, UnplugIcon } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/settings')({
@@ -20,6 +24,7 @@ export const Route = createFileRoute('/settings')({
 function SettingsPage() {
   const queryClient = useQueryClient();
   const { data: status } = useSuspenseQuery(swiggyStatusQueryOptions);
+  const [disconnectOpen, setDisconnectOpen] = useState(false);
   const addressesQuery = useQuery({
     ...swiggyAddressesQueryOptions,
     enabled: status.connected,
@@ -36,6 +41,7 @@ function SettingsPage() {
   const disconnectMutation = useMutation({
     mutationFn: disconnectSwiggy,
     onSuccess: async () => {
+      setDisconnectOpen(false);
       toast.success('Disconnected Swiggy');
       await queryClient.invalidateQueries({ queryKey: ['swiggy'] });
     },
@@ -52,26 +58,35 @@ function SettingsPage() {
   });
 
   return (
-    <AppShell title='Settings'>
+    <AppShell title='Settings' subtitle='Swiggy connection and delivery defaults'>
       <div className='mx-auto flex max-w-2xl flex-col gap-4'>
-        <Card>
-          <CardHeader>
-            <CardTitle>Swiggy connection</CardTitle>
-            <CardDescription>
-              Localhost-only OAuth. Access tokens last about five days and are stored in the local SQLite database.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='space-y-4'>
+        <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+          <div className='flex items-start justify-between gap-3'>
+            <div>
+              <h2 className='font-heading text-base font-semibold tracking-tight'>Swiggy connection</h2>
+              <p className='mt-1 text-sm text-muted-foreground'>
+                Localhost-only OAuth. Access tokens last about five days and stay in local SQLite.
+              </p>
+            </div>
+            <Badge variant={status.connected ? 'default' : 'secondary'}>
+              {status.connected ? 'Connected' : 'Offline'}
+            </Badge>
+          </div>
+
+          <div className='mt-4 space-y-3'>
             <p className='text-sm'>
-              Status: <span className='font-medium'>{status.connected ? 'Connected' : 'Not connected'}</span>
+              {status.connected ? 'Connected' : 'Not connected'}
               {status.expiresAt ? (
                 <span className='text-muted-foreground'> · expires {new Date(status.expiresAt).toLocaleString()}</span>
               ) : null}
             </p>
-            <p className='rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground'>{status.privacyDisclosure}</p>
-            <div className='flex flex-wrap gap-2'>
+            <p className='rounded-2xl bg-muted/55 p-3.5 text-sm leading-relaxed text-muted-foreground'>
+              {status.privacyDisclosure}
+            </p>
+            <div className='flex flex-col gap-2 sm:flex-row'>
               <Button
                 type='button'
+                className='w-full sm:w-auto'
                 onClick={() => connectMutation.mutate()}
                 isLoading={connectMutation.isPending}
                 loadingText='Connecting…'
@@ -82,24 +97,26 @@ function SettingsPage() {
                 <Button
                   type='button'
                   variant='outline'
-                  onClick={() => disconnectMutation.mutate()}
-                  isLoading={disconnectMutation.isPending}
-                  loadingText='Disconnecting…'
+                  className='w-full sm:w-auto'
+                  onClick={() => setDisconnectOpen(true)}
                 >
+                  <UnplugIcon />
                   Disconnect
                 </Button>
               ) : null}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         {status.connected ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferred delivery address</CardTitle>
-              <CardDescription>Remembered locally and confirmed before every Food or Instamart flow.</CardDescription>
-            </CardHeader>
-            <CardContent className='space-y-3'>
+          <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+            <div className='mb-4'>
+              <h2 className='font-heading text-base font-semibold tracking-tight'>Preferred delivery address</h2>
+              <p className='mt-1 text-sm text-muted-foreground'>
+                Remembered locally and confirmed before every Food or Instamart flow.
+              </p>
+            </div>
+            <div className='space-y-2'>
               {addressesQuery.isLoading ? <p className='text-sm text-muted-foreground'>Loading addresses…</p> : null}
               {addressesQuery.error ? <p className='text-sm text-destructive'>{addressesQuery.error.message}</p> : null}
               {(addressesQuery.data ?? []).map((address) => {
@@ -108,20 +125,48 @@ function SettingsPage() {
                   <button
                     key={address.addressId}
                     type='button'
-                    className={`w-full rounded-xl border px-3 py-3 text-left ${
-                      selected ? 'border-primary bg-accent text-accent-foreground' : 'border-border hover:bg-muted'
-                    }`}
+                    className={cn(
+                      'flex w-full items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition-[transform,background-color,border-color] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)]',
+                      'active:scale-[0.99]',
+                      selected
+                        ? 'border-primary bg-accent text-accent-foreground'
+                        : 'border-border hover:bg-muted/70'
+                    )}
                     onClick={() => preferredMutation.mutate(address)}
                   >
-                    <div className='font-medium'>{address.label ?? 'Address'}</div>
-                    <div className='text-sm text-muted-foreground'>{address.displayAddress ?? address.addressId}</div>
+                    <span
+                      className={cn(
+                        'mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-xl',
+                        selected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      {selected ? <CheckIcon className='size-4' /> : <MapPinIcon className='size-4' />}
+                    </span>
+                    <span className='min-w-0'>
+                      <span className='block font-medium'>{address.label ?? 'Address'}</span>
+                      <span className='mt-0.5 block text-sm text-muted-foreground'>
+                        {address.displayAddress ?? address.addressId}
+                      </span>
+                    </span>
                   </button>
                 );
               })}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
         ) : null}
       </div>
+
+      <ConfirmSheet
+        open={disconnectOpen}
+        onOpenChange={setDisconnectOpen}
+        title='Disconnect Swiggy?'
+        description='Food and Instamart cart sync will stop until you reconnect.'
+        confirmLabel='Disconnect'
+        destructive
+        isLoading={disconnectMutation.isPending}
+        loadingText='Disconnecting…'
+        onConfirm={() => disconnectMutation.mutate()}
+      />
     </AppShell>
   );
 }

@@ -34,14 +34,23 @@ export function ThemeProvider({
 
     root.classList.remove('light', 'dark');
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const resolved =
+      theme === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light'
+        : theme;
 
-      root.classList.add(systemTheme);
-      return;
+    root.classList.add(resolved);
+
+    const themeColor = resolved === 'dark' ? '#2a241c' : '#f7f3ea';
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      document.head.appendChild(meta);
     }
-
-    root.classList.add(theme);
+    meta.setAttribute('content', themeColor);
   }, [theme]);
 
   const value = {
