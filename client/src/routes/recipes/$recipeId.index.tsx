@@ -49,7 +49,10 @@ function RecipeDetailPage() {
             type='button'
             size='icon-sm'
             variant='ghost'
-            aria-label='Favorite'
+            aria-label={recipe.favorite ? 'Unfavorite' : 'Favorite'}
+            tooltip={recipe.favorite ? 'Unfavorite' : 'Favorite'}
+            isLoading={favoriteMutation.isPending}
+            loadingText={recipe.favorite ? 'Unfavoriting…' : 'Favoriting…'}
             onClick={() => favoriteMutation.mutate()}
           >
             <HeartIcon className={recipe.favorite ? 'fill-primary text-primary' : ''} />
@@ -62,6 +65,8 @@ function RecipeDetailPage() {
             type='button'
             size='sm'
             variant='destructive'
+            isLoading={deleteMutation.isPending}
+            loadingText='Deleting…'
             onClick={() => {
               if (window.confirm('Delete this recipe?')) {
                 deleteMutation.mutate();

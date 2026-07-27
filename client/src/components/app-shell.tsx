@@ -35,6 +35,7 @@ export function AppShell({ children, title, actions }: { children: ReactNode; ti
               variant='ghost'
               size='icon-sm'
               aria-label='Toggle theme'
+              tooltip={theme === 'dark' ? 'Light mode' : 'Dark mode'}
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <SunIcon className='size-4' /> : <MoonIcon className='size-4' />}

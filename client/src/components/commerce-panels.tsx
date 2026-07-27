@@ -117,7 +117,9 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           <Button
             type='button'
             onClick={() => foodOffersMutation.mutate()}
-            disabled={!statusQuery.data?.connected || foodOffersMutation.isPending}
+            disabled={!statusQuery.data?.connected}
+            isLoading={foodOffersMutation.isPending}
+            loadingText='Finding dishes…'
           >
             Find nearby dishes
           </Button>
@@ -155,7 +157,9 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           <Button
             type='button'
             variant='secondary'
-            disabled={!foodQuery.data?.selectedOfferId || foodReviewMutation.isPending}
+            disabled={!foodQuery.data?.selectedOfferId}
+            isLoading={foodReviewMutation.isPending}
+            loadingText='Preparing review…'
             onClick={() => foodReviewMutation.mutate()}
           >
             Review Food cart sync
@@ -180,7 +184,9 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
             <Button
               type='button'
               onClick={() => basketMutation.mutate()}
-              disabled={!statusQuery.data?.connected || basketMutation.isPending}
+              disabled={!statusQuery.data?.connected}
+              isLoading={basketMutation.isPending}
+              loadingText='Building…'
             >
               Build basket
             </Button>
@@ -246,7 +252,9 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           <Button
             type='button'
             variant='secondary'
-            disabled={!basketQuery.data || instamartReviewMutation.isPending}
+            disabled={!basketQuery.data}
+            isLoading={instamartReviewMutation.isPending}
+            loadingText='Preparing review…'
             onClick={() => instamartReviewMutation.mutate()}
           >
             Review Instamart cart sync
@@ -264,7 +272,12 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
         title={review?.kind === 'food' ? 'Confirm Food cart sync' : 'Confirm Instamart cart sync'}
         description='This updates your real Swiggy cart. It will not place an order.'
         footer={
-          <Button type='button' onClick={() => confirmMutation.mutate()} disabled={confirmMutation.isPending}>
+          <Button
+            type='button'
+            onClick={() => confirmMutation.mutate()}
+            isLoading={confirmMutation.isPending}
+            loadingText='Updating cart…'
+          >
             Confirm cart update
           </Button>
         }

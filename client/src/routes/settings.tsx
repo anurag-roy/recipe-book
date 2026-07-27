@@ -70,7 +70,12 @@ function SettingsPage() {
             </p>
             <p className='rounded-xl bg-muted/60 p-3 text-sm text-muted-foreground'>{status.privacyDisclosure}</p>
             <div className='flex flex-wrap gap-2'>
-              <Button type='button' onClick={() => connectMutation.mutate()} disabled={connectMutation.isPending}>
+              <Button
+                type='button'
+                onClick={() => connectMutation.mutate()}
+                isLoading={connectMutation.isPending}
+                loadingText='Connecting…'
+              >
                 {status.connected ? 'Reconnect Swiggy' : 'Connect Swiggy'}
               </Button>
               {status.connected ? (
@@ -78,7 +83,8 @@ function SettingsPage() {
                   type='button'
                   variant='outline'
                   onClick={() => disconnectMutation.mutate()}
-                  disabled={disconnectMutation.isPending}
+                  isLoading={disconnectMutation.isPending}
+                  loadingText='Disconnecting…'
                 >
                   Disconnect
                 </Button>

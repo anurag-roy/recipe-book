@@ -80,7 +80,9 @@ function ImportsPage() {
                 />
                 <Button
                   type='button'
-                  disabled={!url.trim() || urlMutation.isPending}
+                  disabled={!url.trim()}
+                  isLoading={urlMutation.isPending}
+                  loadingText='Importing…'
                   onClick={() => urlMutation.mutate(url.trim())}
                 >
                   Import URL
@@ -98,7 +100,9 @@ function ImportsPage() {
                 />
                 <Button
                   type='button'
-                  disabled={text.trim().length < 20 || textMutation.isPending}
+                  disabled={text.trim().length < 20}
+                  isLoading={textMutation.isPending}
+                  loadingText='Importing…'
                   onClick={() => textMutation.mutate(text.trim())}
                 >
                   Import text
@@ -127,7 +131,12 @@ function ImportsPage() {
                   {job.error ? <p className='mt-1 text-xs text-destructive'>{job.error}</p> : null}
                   {job.status === 'failed' ? (
                     <div className='mt-2'>
-                      <Button size='sm' onClick={() => retryMutation.mutate(job.id)} disabled={retryMutation.isPending}>
+                      <Button
+                        size='sm'
+                        onClick={() => retryMutation.mutate(job.id)}
+                        isLoading={retryMutation.isPending && retryMutation.variables === job.id}
+                        loadingText='Retrying…'
+                      >
                         Retry
                       </Button>
                     </div>

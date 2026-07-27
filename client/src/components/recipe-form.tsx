@@ -248,6 +248,8 @@ export function RecipeForm({
               type='button'
               size='icon'
               variant='ghost'
+              aria-label='Remove ingredient'
+              tooltip='Remove ingredient'
               onClick={() =>
                 setForm((current) => ({
                   ...current,
@@ -357,6 +359,8 @@ export function RecipeForm({
               type='button'
               size='icon'
               variant='ghost'
+              aria-label='Remove step'
+              tooltip='Remove step'
               onClick={() =>
                 setForm((current) => ({
                   ...current,
@@ -379,7 +383,7 @@ export function RecipeForm({
         />
       </div>
 
-      <Button type='submit' disabled={submitting || !form.title.trim()}>
+      <Button type='submit' disabled={!form.title.trim()} isLoading={submitting} loadingText='Saving…'>
         Save recipe
       </Button>
     </form>

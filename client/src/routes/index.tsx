@@ -107,6 +107,9 @@ function RecipesPage() {
                       size='icon-sm'
                       variant='ghost'
                       aria-label={recipe.favorite ? 'Unfavorite' : 'Favorite'}
+                      tooltip={recipe.favorite ? 'Unfavorite' : 'Favorite'}
+                      isLoading={favoriteMutation.isPending && favoriteMutation.variables === recipe.id}
+                      loadingText={recipe.favorite ? 'Unfavoriting…' : 'Favoriting…'}
                       onClick={() => favoriteMutation.mutate(recipe.id)}
                     >
                       <HeartIcon className={recipe.favorite ? 'fill-primary text-primary' : ''} />

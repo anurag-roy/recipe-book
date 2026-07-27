@@ -1,4 +1,7 @@
+import type { ReactNode } from 'react';
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
+import { Spinner } from '@client/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@client/components/ui/tooltip';
 import { cn } from '@client/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -40,9 +43,59 @@ function Button({
   className,
   variant = 'default',
   size = 'default',
+  static: isStatic = false,
+  isLoading = false,
+  loadingText = 'Loading…',
+  tooltip,
+  tooltipSide = 'bottom',
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
-  return <ButtonPrimitive data-slot='button' className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & {
+    static?: boolean;
+    isLoading?: boolean;
+    loadingText?: ReactNode;
+    tooltip?: ReactNode;
+    tooltipSide?: 'top' | 'right' | 'bottom' | 'left' | 'inline-start' | 'inline-end';
+  }) {
+  const isIconButton = typeof size === 'string' && size.startsWith('icon');
+  const button = (
+    <ButtonPrimitive
+      data-slot='button'
+      aria-busy={isLoading || undefined}
+      disabled={isLoading || disabled}
+      className={cn(
+        buttonVariants({ variant, size, className }),
+        !isStatic && variant !== 'link' && 'active:not-disabled:scale-[0.96]'
+      )}
+      {...props}
+    >
+      {isLoading ? (
+        <>
+          <Spinner data-icon='inline-start' />
+          <span className={cn(isIconButton && 'sr-only')}>{loadingText}</span>
+        </>
+      ) : (
+        children
+      )}
+    </ButtonPrimitive>
+  );
+
+  if (!tooltip) return button;
+
+  return (
+    <Tooltip>
+      {disabled || isLoading ? (
+        <TooltipTrigger render={<span className='inline-flex w-fit' tabIndex={0} />}>{button}</TooltipTrigger>
+      ) : (
+        <TooltipTrigger render={button} />
+      )}
+      <TooltipContent side={tooltipSide} className='max-w-60 text-pretty'>
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export { Button, buttonVariants };
