@@ -2,6 +2,7 @@ import { ActionSheet } from '@client/components/action-sheet';
 import { AppShell } from '@client/components/app-shell';
 import { CommercePanels } from '@client/components/commerce-panels';
 import { ConfirmSheet } from '@client/components/confirm-sheet';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@client/components/ui/accordion';
 import { Badge } from '@client/components/ui/badge';
 import { Button } from '@client/components/ui/button';
 import { deleteRecipe, recipeImageUrl, recipeQueryOptions, toggleFavorite } from '@client/lib/recipes';
@@ -144,37 +145,59 @@ function RecipeDetailPage() {
         </section>
 
         <div className='grid gap-4 lg:grid-cols-2'>
-          <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
-            <h2 className='font-heading text-base font-semibold tracking-tight'>Ingredients</h2>
-            <ul className='mt-3 space-y-2 text-sm'>
-              {recipe.ingredients.map((ingredient) => (
-                <li key={ingredient.id ?? ingredient.originalText} className='rounded-2xl bg-muted/45 px-3 py-2.5'>
-                  <div className='leading-snug'>{ingredient.originalText}</div>
-                  {(ingredient.optional || ingredient.pantryDefault || ingredient.group) && (
-                    <div className='mt-1 text-xs text-muted-foreground'>
-                      {[ingredient.optional ? 'optional' : null, ingredient.pantryDefault ? 'pantry' : null, ingredient.group]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <Accordion className='overflow-visible rounded-[1.75rem] border-none bg-card shadow-sm ring-1 ring-foreground/5'>
+            <AccordionItem value='ingredients' className='border-none data-open:bg-transparent'>
+              <AccordionTrigger className='px-4 py-4 hover:no-underline sm:px-5'>
+                <span className='flex min-w-0 items-baseline gap-2'>
+                  <span className='font-heading text-base font-semibold tracking-tight'>Ingredients</span>
+                  <span className='text-sm font-normal text-muted-foreground'>{recipe.ingredients.length}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ul className='space-y-2 text-sm'>
+                  {recipe.ingredients.map((ingredient) => (
+                    <li key={ingredient.id ?? ingredient.originalText} className='rounded-2xl bg-muted/45 px-3 py-2.5'>
+                      <div className='leading-snug'>{ingredient.originalText}</div>
+                      {(ingredient.optional || ingredient.pantryDefault || ingredient.group) && (
+                        <div className='mt-1 text-xs text-muted-foreground'>
+                          {[
+                            ingredient.optional ? 'optional' : null,
+                            ingredient.pantryDefault ? 'pantry' : null,
+                            ingredient.group,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
-          <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
-            <h2 className='font-heading text-base font-semibold tracking-tight'>Instructions</h2>
-            <ol className='mt-3 space-y-3 text-sm'>
-              {recipe.instructions.map((instruction, index) => (
-                <li key={instruction.id ?? instruction.text} className='flex gap-3'>
-                  <span className='mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground'>
-                    {index + 1}
-                  </span>
-                  <span className='leading-relaxed'>{instruction.text}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <Accordion className='overflow-visible rounded-[1.75rem] border-none bg-card shadow-sm ring-1 ring-foreground/5'>
+            <AccordionItem value='instructions' className='border-none data-open:bg-transparent'>
+              <AccordionTrigger className='px-4 py-4 hover:no-underline sm:px-5'>
+                <span className='flex min-w-0 items-baseline gap-2'>
+                  <span className='font-heading text-base font-semibold tracking-tight'>Instructions</span>
+                  <span className='text-sm font-normal text-muted-foreground'>{recipe.instructions.length}</span>
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <ol className='space-y-3 text-sm'>
+                  {recipe.instructions.map((instruction, index) => (
+                    <li key={instruction.id ?? instruction.text} className='flex gap-3'>
+                      <span className='mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground'>
+                        {index + 1}
+                      </span>
+                      <span className='leading-relaxed'>{instruction.text}</span>
+                    </li>
+                  ))}
+                </ol>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         <CommercePanels recipe={recipe} />

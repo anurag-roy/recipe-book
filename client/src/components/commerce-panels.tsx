@@ -1,5 +1,6 @@
 import type { BasketLine, CartReview, DishOffer, FoodCustomization, Recipe } from '@shared/types';
 import { ResponsiveOverlay } from '@client/components/responsive-overlay';
+import { SwiggyLogo } from '@client/components/swiggy-logo';
 import { Badge } from '@client/components/ui/badge';
 import { Button } from '@client/components/ui/button';
 import { Input } from '@client/components/ui/input';
@@ -120,7 +121,10 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
     <div className='grid gap-4 lg:grid-cols-2'>
       <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
         <div className='mb-4'>
-          <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Swiggy Food</h2>
+          <div className='flex items-center gap-2.5'>
+            <SwiggyLogo className='size-6' title='Swiggy Food' />
+            <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Swiggy Food</h2>
+          </div>
           <p className='mt-1 text-sm text-muted-foreground'>Find nearby restaurant matches for this dish.</p>
         </div>
         <div className='space-y-3'>
@@ -141,7 +145,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
               return (
                 <div
                   key={offer.id}
-                  className={`overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                  className={`rounded-2xl border transition-[border-color,box-shadow] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] ${
                     selected ? 'border-primary bg-background shadow-sm' : 'border-border/80 bg-background/50'
                   }`}
                 >
@@ -152,23 +156,25 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
                     disabled={selectMutation.isPending}
                   >
                     <div className='flex gap-3'>
-                      <div className='relative size-20 shrink-0 overflow-hidden rounded-xl bg-muted'>
-                        {offer.imageUrl ? (
-                          <img
-                            src={offer.imageUrl}
-                            alt=''
-                            className='size-full object-cover object-center'
-                          />
-                        ) : (
-                          <div className='flex size-full items-center justify-center text-[10px] text-muted-foreground'>
-                            No dish photo
-                          </div>
-                        )}
+                      <div className='relative size-20 shrink-0'>
+                        <div className='size-full overflow-hidden rounded-xl bg-muted'>
+                          {offer.imageUrl ? (
+                            <img
+                              src={offer.imageUrl}
+                              alt=''
+                              className='size-full object-cover object-center'
+                            />
+                          ) : (
+                            <div className='flex size-full items-center justify-center text-[10px] text-muted-foreground'>
+                              No dish photo
+                            </div>
+                          )}
+                        </div>
                         {offer.restaurantImageUrl ? (
                           <img
                             src={offer.restaurantImageUrl}
                             alt=''
-                            className='absolute -right-1 -bottom-1 size-8 rounded-full border-2 border-card object-cover object-center'
+                            className='absolute -right-1 -bottom-1 z-10 size-8 rounded-full border-2 border-card object-cover object-center shadow-sm'
                           />
                         ) : null}
                       </div>
@@ -232,7 +238,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
                         className='w-full'
                         disabled={!foodReady}
                         isLoading={foodReviewMutation.isPending || selectMutation.isPending}
-                        loadingText={selectMutation.isPending ? 'Loading options…' : 'Preparing review…'}
+                        loadingText={selectMutation.isPending ? 'Loading options…' : 'Adding to cart…'}
                         onClick={() => foodReviewMutation.mutate()}
                       >
                         Add to cart
@@ -253,7 +259,10 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
 
       <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
         <div className='mb-4'>
-          <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Instamart</h2>
+          <div className='flex items-center gap-2.5'>
+            <SwiggyLogo className='size-6' title='Instamart' />
+            <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Instamart</h2>
+          </div>
           <p className='mt-1 text-sm text-muted-foreground'>Build a grocery basket scaled to your servings.</p>
         </div>
         <div className='space-y-3'>

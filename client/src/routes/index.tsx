@@ -114,10 +114,10 @@ function RecipesPage() {
                   <Link
                     to='/recipes/$recipeId'
                     params={{ recipeId: String(recipe.id) }}
-                    className='absolute inset-0 z-0'
+                    className='absolute inset-0 z-10'
                     aria-label={recipe.title}
                   />
-                  <div className='flex gap-3 p-3 sm:block sm:p-0'>
+                  <div className='pointer-events-none flex gap-3 p-3 sm:block sm:p-0'>
                     <div className='aspect-square w-24 shrink-0 overflow-hidden rounded-2xl bg-muted sm:aspect-[4/3] sm:w-full sm:rounded-none'>
                       {imageUrl ? (
                         <img
@@ -131,7 +131,7 @@ function RecipesPage() {
                         </div>
                       )}
                     </div>
-                    <div className='relative z-10 flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5 pr-1 sm:gap-2 sm:p-4'>
+                    <div className='relative flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5 pr-1 sm:gap-2 sm:p-4'>
                       <div className='flex items-start justify-between gap-2'>
                         <h2 className='line-clamp-2 font-heading text-[0.95rem] leading-snug font-semibold tracking-tight sm:text-base'>
                           {recipe.title}
@@ -140,20 +140,22 @@ function RecipesPage() {
                           type='button'
                           size='icon-sm'
                           variant='ghost'
-                          className='relative z-20 -mr-1 shrink-0'
+                          className='pointer-events-auto relative z-20 -mr-1 shrink-0'
                           aria-label={recipe.favorite ? 'Unfavorite' : 'Favorite'}
                           tooltip={recipe.favorite ? 'Unfavorite' : 'Favorite'}
                           isLoading={favoriteMutation.isPending && favoriteMutation.variables === recipe.id}
                           loadingText={recipe.favorite ? 'Unfavoriting…' : 'Favoriting…'}
-                          onClick={() => favoriteMutation.mutate(recipe.id)}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            favoriteMutation.mutate(recipe.id);
+                          }}
                         >
                           <HeartIcon className={cn(recipe.favorite && 'fill-primary text-primary')} />
                         </Button>
                       </div>
                       {recipe.description ? (
-                        <p className='line-clamp-1 text-sm text-muted-foreground sm:line-clamp-2'>
-                          {recipe.description}
-                        </p>
+                        <p className='line-clamp-2 text-sm text-muted-foreground'>{recipe.description}</p>
                       ) : null}
                       {recipe.tags.length > 0 ? (
                         <div className='hidden flex-wrap gap-1 sm:flex'>
