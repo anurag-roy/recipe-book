@@ -1,0 +1,50 @@
+{
+  "name": "food-journal",
+  "version": "1.0.0",
+  "description": "Food Journal — personal recipe library with Swiggy Food and Instamart cart sync",
+  "keywords": [
+    "food-journal",
+    "instamart",
+    "recipes",
+    "swiggy"
+  ],
+  "license": "MIT",
+  "author": "Anurag Roy <anuragroy@duck.com> (https://anuragroy.dev/)",
+  "type": "module",
+  "main": "server/index.ts",
+  "scripts": {
+    "dev": "bun --env-file=.env --watch server/index.ts",
+    "dev:client": "bun run --cwd client dev",
+    "build": "bun server/scripts/build.ts",
+    "start": "bun --env-file=.env server/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "db": "bunx drizzle-kit",
+    "db:seed": "bun --env-file=.env server/scripts/seed.ts",
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio",
+    "db:migrate": "bun --env-file=.env server/db/migrate.ts",
+    "db:generate": "bunx drizzle-kit generate"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.8.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "@mozilla/readability": "^0.6.0",
+    "@openai/agents": "^0.3.7",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "hono": "^4.12.28",
+    "linkedom": "^0.18.12",
+    "openai": "^6.16.0",
+    "picocolors": "^1.1.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.9",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "oxfmt": "^0.58.0",
+    "oxlint": "^1.73.0",
+    "typescript": "^7.0.2"
+  }
+}

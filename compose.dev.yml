@@ -1,0 +1,41 @@
+services:
+  app:
+    profiles: ['disabled']
+
+  api:
+    image: oven/bun:1
+    working_dir: /app
+    command: bun --env-file=.env --watch server/index.ts
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      S3_ENDPOINT: http://minio:9000
+      DATABASE_URL: .data/database.db
+      SWIGGY_OAUTH_REDIRECT_URI: http://localhost:3000/api/swiggy/callback
+    volumes:
+      - ./:/app
+      - app-data:/app/.data
+      - bun-root-modules:/app/node_modules
+      - bun-client-modules:/app/client/node_modules
+
+  client:
+    image: oven/bun:1
+    working_dir: /app/client
+    command: bun run dev -- --host 0.0.0.0 --port 5173
+    depends_on:
+      - api
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./:/app
+      - bun-root-modules:/app/node_modules
+      - bun-client-modules:/app/client/node_modules
+
+volumes:
+  bun-root-modules:
+  bun-client-modules:
