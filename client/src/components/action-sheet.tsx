@@ -1,4 +1,4 @@
-import { BottomSheet } from '@client/components/silk/bottom-sheet';
+import { DetachedSheet } from '@client/components/silk/detached-sheet';
 import { cn } from '@client/lib/utils';
 import type { ReactNode } from 'react';
 
@@ -22,27 +22,27 @@ type ActionSheetProps = {
 
 export function ActionSheet({ open, onOpenChange, title, description, items }: ActionSheetProps) {
   return (
-    <BottomSheet.Root presented={open} onPresentedChange={onOpenChange}>
-      <BottomSheet.Portal>
-        <BottomSheet.View>
-          <BottomSheet.Backdrop />
-          <BottomSheet.Content>
-            <BottomSheet.Handle />
-            <div className='px-5 pt-1 pb-2'>
+    <DetachedSheet.Root presented={open} onPresentedChange={onOpenChange}>
+      <DetachedSheet.Portal>
+        <DetachedSheet.View>
+          <DetachedSheet.Backdrop />
+          <DetachedSheet.Content>
+            <DetachedSheet.Handle />
+            <div className='px-5 pt-2 pb-1 md:pt-5'>
               {title ? (
-                <BottomSheet.Title className='font-heading text-base font-semibold tracking-tight'>
+                <DetachedSheet.Title className='font-heading text-base font-semibold tracking-tight'>
                   {title}
-                </BottomSheet.Title>
+                </DetachedSheet.Title>
               ) : (
-                <BottomSheet.Title className='sr-only'>Actions</BottomSheet.Title>
+                <DetachedSheet.Title className='sr-only'>Actions</DetachedSheet.Title>
               )}
               {description ? (
-                <BottomSheet.Description className='mt-1 text-sm text-muted-foreground'>
+                <DetachedSheet.Description className='mt-1 text-sm text-muted-foreground'>
                   {description}
-                </BottomSheet.Description>
+                </DetachedSheet.Description>
               ) : null}
             </div>
-            <ul className='flex flex-col gap-1 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'>
+            <ul className='flex flex-col gap-1 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-4'>
               {items.map((item) => (
                 <li key={item.key}>
                   <button
@@ -80,9 +80,9 @@ export function ActionSheet({ open, onOpenChange, title, description, items }: A
                 </li>
               ))}
             </ul>
-          </BottomSheet.Content>
-        </BottomSheet.View>
-      </BottomSheet.Portal>
-    </BottomSheet.Root>
+          </DetachedSheet.Content>
+        </DetachedSheet.View>
+      </DetachedSheet.Portal>
+    </DetachedSheet.Root>
   );
 }

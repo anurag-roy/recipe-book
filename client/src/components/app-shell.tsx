@@ -81,14 +81,19 @@ export function AppShell({
           <header className='sticky top-0 z-30 border-b border-border/60 bg-background/80 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-xl md:border-none md:bg-transparent md:px-0 md:pt-6 md:pb-4 md:backdrop-blur-none'>
             <div className='flex items-start justify-between gap-3'>
               <div className='min-w-0 flex-1'>
-                <div className='mb-1 flex items-center gap-2 md:hidden'>
-                  <Link to='/' className='inline-flex items-center gap-2 font-heading text-sm font-semibold tracking-tight'>
-                    <span className='inline-flex size-7 items-center justify-center rounded-xl bg-primary text-primary-foreground'>
-                      <BookOpenIcon className='size-3.5' />
-                    </span>
-                    Food Journal
-                  </Link>
-                </div>
+                {!back ? (
+                  <div className='mb-1 flex items-center gap-2 md:hidden'>
+                    <Link
+                      to='/'
+                      className='inline-flex items-center gap-2 font-heading text-sm font-semibold tracking-tight'
+                    >
+                      <span className='inline-flex size-7 items-center justify-center rounded-xl bg-primary text-primary-foreground'>
+                        <BookOpenIcon className='size-3.5' />
+                      </span>
+                      Food Journal
+                    </Link>
+                  </div>
+                ) : null}
                 <div className='flex items-center gap-2'>
                   {back}
                   <div className='min-w-0'>
