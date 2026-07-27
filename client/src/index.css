@@ -1,3 +1,4 @@
+@import '@silk-hq/components/unlayered-styles.css' layer(silk);
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -8,6 +9,9 @@
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Inter Variable', sans-serif;
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-soft: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -121,11 +125,94 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
+    -webkit-tap-highlight-color: transparent;
   }
   html {
     @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  .app-shell {
+    background-color: var(--background);
+  }
+
+  .app-shell-atmosphere {
+    background:
+      radial-gradient(120% 80% at 0% -10%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 55%),
+      radial-gradient(90% 60% at 100% 0%, color-mix(in oklch, var(--accent) 55%, transparent), transparent 50%),
+      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 55%, transparent), transparent 40%);
+    opacity: 0.9;
+  }
+
+  .dark .app-shell-atmosphere {
+    background:
+      radial-gradient(100% 70% at 10% -5%, color-mix(in oklch, var(--primary) 22%, transparent), transparent 55%),
+      radial-gradient(80% 50% at 100% 0%, color-mix(in oklch, var(--accent) 35%, transparent), transparent 45%),
+      linear-gradient(180deg, color-mix(in oklch, var(--muted) 40%, transparent), transparent 35%);
+    opacity: 1;
+  }
+
+  .animate-page-enter {
+    animation: page-enter 280ms var(--ease-out-soft) both;
+  }
+
+  .stagger-in > * {
+    animation: rise-in 320ms var(--ease-out-soft) both;
+  }
+
+  .stagger-in > *:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-in > *:nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .stagger-in > *:nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .stagger-in > *:nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .stagger-in > *:nth-child(5) {
+    animation-delay: 160ms;
+  }
+  .stagger-in > *:nth-child(6) {
+    animation-delay: 200ms;
+  }
+  .stagger-in > *:nth-child(n + 7) {
+    animation-delay: 240ms;
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-enter,
+  .stagger-in > * {
+    animation: none;
   }
 }

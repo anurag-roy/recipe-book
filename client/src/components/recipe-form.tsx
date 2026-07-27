@@ -120,7 +120,7 @@ export function RecipeForm({
 
   return (
     <form
-      className='space-y-6'
+      className='space-y-7'
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit(form);
@@ -132,6 +132,7 @@ export function RecipeForm({
           <Input
             id='title'
             required
+            className='h-11 rounded-2xl'
             value={form.title}
             onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
           />
@@ -140,6 +141,7 @@ export function RecipeForm({
           <Label htmlFor='description'>Description</Label>
           <Textarea
             id='description'
+            className='rounded-2xl'
             value={form.description}
             onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
           />
@@ -148,6 +150,7 @@ export function RecipeForm({
           <Label htmlFor='dishName'>Dish name</Label>
           <Input
             id='dishName'
+            className='h-11 rounded-2xl'
             value={form.dishName}
             onChange={(event) => setForm((current) => ({ ...current, dishName: event.target.value }))}
           />
@@ -156,6 +159,7 @@ export function RecipeForm({
           <Label htmlFor='cuisine'>Cuisine</Label>
           <Input
             id='cuisine'
+            className='h-11 rounded-2xl'
             value={form.cuisine}
             onChange={(event) => setForm((current) => ({ ...current, cuisine: event.target.value }))}
           />
@@ -167,6 +171,7 @@ export function RecipeForm({
             type='number'
             min='0'
             step='any'
+            className='h-11 rounded-2xl'
             value={form.servings}
             onChange={(event) => setForm((current) => ({ ...current, servings: event.target.value }))}
           />
@@ -175,6 +180,7 @@ export function RecipeForm({
           <Label htmlFor='yieldText'>Yield text</Label>
           <Input
             id='yieldText'
+            className='h-11 rounded-2xl'
             value={form.yieldText}
             onChange={(event) => setForm((current) => ({ ...current, yieldText: event.target.value }))}
           />
@@ -183,6 +189,7 @@ export function RecipeForm({
           <Label htmlFor='tags'>Tags (comma separated)</Label>
           <Input
             id='tags'
+            className='h-11 rounded-2xl'
             value={form.tags}
             onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))}
           />
@@ -190,8 +197,8 @@ export function RecipeForm({
       </div>
 
       <section className='space-y-3'>
-        <div className='flex items-center justify-between'>
-          <h2 className='font-medium'>Ingredients</h2>
+        <div className='flex items-center justify-between gap-2'>
+          <h2 className='font-heading text-base font-semibold tracking-tight'>Ingredients</h2>
           <Button
             type='button'
             size='sm'
@@ -219,9 +226,26 @@ export function RecipeForm({
           </Button>
         </div>
         {form.ingredients.map((ingredient, index) => (
-          <div key={index} className='grid gap-2 rounded-xl border border-border p-3 sm:grid-cols-6'>
+          <div key={index} className='grid gap-2 rounded-2xl border border-border/80 bg-muted/20 p-3 sm:grid-cols-6'>
+            <div className='flex items-center justify-between gap-2 sm:col-span-6 sm:hidden'>
+              <span className='text-xs font-medium text-muted-foreground'>Ingredient {index + 1}</span>
+              <Button
+                type='button'
+                size='icon-sm'
+                variant='ghost'
+                aria-label='Remove ingredient'
+                onClick={() =>
+                  setForm((current) => ({
+                    ...current,
+                    ingredients: current.ingredients.filter((_, itemIndex) => itemIndex !== index),
+                  }))
+                }
+              >
+                <Trash2Icon />
+              </Button>
+            </div>
             <Input
-              className='sm:col-span-3'
+              className='rounded-xl sm:col-span-3'
               placeholder='Original line'
               value={ingredient.originalText}
               onChange={(event) =>
@@ -233,7 +257,7 @@ export function RecipeForm({
               }
             />
             <Input
-              className='sm:col-span-2'
+              className='rounded-xl sm:col-span-2'
               placeholder='Name'
               value={ingredient.name}
               onChange={(event) =>
@@ -248,6 +272,7 @@ export function RecipeForm({
               type='button'
               size='icon'
               variant='ghost'
+              className='hidden sm:inline-flex'
               aria-label='Remove ingredient'
               tooltip='Remove ingredient'
               onClick={() =>
@@ -259,30 +284,34 @@ export function RecipeForm({
             >
               <Trash2Icon />
             </Button>
+            <div className='grid grid-cols-2 gap-2 sm:contents'>
+              <Input
+                className='rounded-xl'
+                placeholder='Amount'
+                value={ingredient.amount}
+                onChange={(event) =>
+                  setForm((current) => {
+                    const ingredients = [...current.ingredients];
+                    ingredients[index] = { ...ingredient, amount: event.target.value };
+                    return { ...current, ingredients };
+                  })
+                }
+              />
+              <Input
+                className='rounded-xl'
+                placeholder='Unit'
+                value={ingredient.unit}
+                onChange={(event) =>
+                  setForm((current) => {
+                    const ingredients = [...current.ingredients];
+                    ingredients[index] = { ...ingredient, unit: event.target.value };
+                    return { ...current, ingredients };
+                  })
+                }
+              />
+            </div>
             <Input
-              placeholder='Amount'
-              value={ingredient.amount}
-              onChange={(event) =>
-                setForm((current) => {
-                  const ingredients = [...current.ingredients];
-                  ingredients[index] = { ...ingredient, amount: event.target.value };
-                  return { ...current, ingredients };
-                })
-              }
-            />
-            <Input
-              placeholder='Unit'
-              value={ingredient.unit}
-              onChange={(event) =>
-                setForm((current) => {
-                  const ingredients = [...current.ingredients];
-                  ingredients[index] = { ...ingredient, unit: event.target.value };
-                  return { ...current, ingredients };
-                })
-              }
-            />
-            <Input
-              className='sm:col-span-2'
+              className='rounded-xl sm:col-span-2'
               placeholder='Qualitative'
               value={ingredient.qualitative}
               onChange={(event) =>
@@ -293,41 +322,43 @@ export function RecipeForm({
                 })
               }
             />
-            <label className='flex items-center gap-2 text-sm'>
-              <input
-                type='checkbox'
-                checked={ingredient.optional}
-                onChange={(event) =>
-                  setForm((current) => {
-                    const ingredients = [...current.ingredients];
-                    ingredients[index] = { ...ingredient, optional: event.target.checked };
-                    return { ...current, ingredients };
-                  })
-                }
-              />
-              Optional
-            </label>
-            <label className='flex items-center gap-2 text-sm'>
-              <input
-                type='checkbox'
-                checked={ingredient.pantryDefault}
-                onChange={(event) =>
-                  setForm((current) => {
-                    const ingredients = [...current.ingredients];
-                    ingredients[index] = { ...ingredient, pantryDefault: event.target.checked };
-                    return { ...current, ingredients };
-                  })
-                }
-              />
-              Pantry
-            </label>
+            <div className='flex flex-wrap gap-4 sm:col-span-2'>
+              <label className='flex items-center gap-2 text-sm'>
+                <input
+                  type='checkbox'
+                  checked={ingredient.optional}
+                  onChange={(event) =>
+                    setForm((current) => {
+                      const ingredients = [...current.ingredients];
+                      ingredients[index] = { ...ingredient, optional: event.target.checked };
+                      return { ...current, ingredients };
+                    })
+                  }
+                />
+                Optional
+              </label>
+              <label className='flex items-center gap-2 text-sm'>
+                <input
+                  type='checkbox'
+                  checked={ingredient.pantryDefault}
+                  onChange={(event) =>
+                    setForm((current) => {
+                      const ingredients = [...current.ingredients];
+                      ingredients[index] = { ...ingredient, pantryDefault: event.target.checked };
+                      return { ...current, ingredients };
+                    })
+                  }
+                />
+                Pantry
+              </label>
+            </div>
           </div>
         ))}
       </section>
 
       <section className='space-y-3'>
-        <div className='flex items-center justify-between'>
-          <h2 className='font-medium'>Instructions</h2>
+        <div className='flex items-center justify-between gap-2'>
+          <h2 className='font-heading text-base font-semibold tracking-tight'>Instructions</h2>
           <Button
             type='button'
             size='sm'
@@ -345,7 +376,11 @@ export function RecipeForm({
         </div>
         {form.instructions.map((instruction, index) => (
           <div key={index} className='flex gap-2'>
+            <span className='mt-2.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground'>
+              {index + 1}
+            </span>
             <Textarea
+              className='rounded-2xl'
               value={instruction.text}
               onChange={(event) =>
                 setForm((current) => {
@@ -378,14 +413,23 @@ export function RecipeForm({
         <Label htmlFor='notes'>Notes</Label>
         <Textarea
           id='notes'
+          className='rounded-2xl'
           value={form.notes}
           onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
         />
       </div>
 
-      <Button type='submit' disabled={!form.title.trim()} isLoading={submitting} loadingText='Saving…'>
-        Save recipe
-      </Button>
+      <div className='sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 -mx-1 border-t border-border/60 bg-card/95 px-1 pt-3 backdrop-blur md:static md:mx-0 md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none'>
+        <Button
+          type='submit'
+          className='w-full md:w-auto'
+          disabled={!form.title.trim()}
+          isLoading={submitting}
+          loadingText='Saving…'
+        >
+          Save recipe
+        </Button>
+      </div>
     </form>
   );
 }

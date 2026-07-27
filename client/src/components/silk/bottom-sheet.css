@@ -1,0 +1,36 @@
+.BottomSheet-view {
+  z-index: 50;
+  height: calc(var(--silk-100-lvh-dvh-pct) + 60px);
+}
+
+.BottomSheet-content {
+  box-sizing: border-box;
+  height: auto;
+  max-height: min(92dvh, 920px);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.BottomSheet-bleedingBackground {
+  border-radius: 1.5rem 1.5rem 0 0;
+  background-color: var(--popover);
+  box-shadow:
+    0 -8px 30px rgb(0 0 0 / 0.08),
+    0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.BottomSheet-handle {
+  width: 2.75rem;
+  height: 0.3125rem;
+  margin: 0.625rem auto 0.25rem;
+  border: 0;
+  border-radius: 9999px;
+  background-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.BottomSheet-handle:active {
+  cursor: grabbing;
+}

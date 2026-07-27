@@ -2,7 +2,6 @@ import type { BasketLine, CartReview, DishOffer, FoodCustomization, Recipe } fro
 import { ResponsiveOverlay } from '@client/components/responsive-overlay';
 import { Badge } from '@client/components/ui/badge';
 import { Button } from '@client/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@client/components/ui/card';
 import { Input } from '@client/components/ui/input';
 import {
   basketQueryOptions,
@@ -119,14 +118,16 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
 
   return (
     <div className='grid gap-4 lg:grid-cols-2'>
-      <Card>
-        <CardHeader>
-          <CardTitle>Order on Swiggy Food</CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-3'>
+      <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+        <div className='mb-4'>
+          <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Swiggy Food</h2>
+          <p className='mt-1 text-sm text-muted-foreground'>Find nearby restaurant matches for this dish.</p>
+        </div>
+        <div className='space-y-3'>
           <Button
             type='button'
             variant='outline'
+            className='w-full sm:w-auto'
             onClick={() => foodOffersMutation.mutate()}
             disabled={!statusQuery.data?.connected}
             isLoading={foodOffersMutation.isPending}
@@ -140,13 +141,13 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
               return (
                 <div
                   key={offer.id}
-                  className={`overflow-hidden rounded-2xl border ${
-                    selected ? 'border-primary bg-card shadow-sm' : 'border-border bg-card'
+                  className={`overflow-hidden rounded-2xl border transition-[border-color,box-shadow] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] ${
+                    selected ? 'border-primary bg-background shadow-sm' : 'border-border/80 bg-background/50'
                   }`}
                 >
                   <button
                     type='button'
-                    className='w-full p-3 text-left hover:bg-muted/40 disabled:opacity-60'
+                    className='w-full p-3 text-left transition-colors duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/40 active:scale-[0.995] disabled:opacity-60'
                     onClick={() => selectMutation.mutate({ offerId: offer.id })}
                     disabled={selectMutation.isPending}
                   >
@@ -247,25 +248,28 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
               );
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Order on Instamart</CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-3'>
-          <div className='flex gap-2'>
+      <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+        <div className='mb-4'>
+          <h2 className='font-heading text-base font-semibold tracking-tight'>Order on Instamart</h2>
+          <p className='mt-1 text-sm text-muted-foreground'>Build a grocery basket scaled to your servings.</p>
+        </div>
+        <div className='space-y-3'>
+          <div className='flex flex-col gap-2 sm:flex-row'>
             <Input
               type='number'
               min='1'
               step='any'
+              className='h-11 rounded-2xl sm:max-w-36'
               value={servings}
               onChange={(event) => setServings(event.target.value)}
               aria-label='Target servings'
             />
             <Button
               type='button'
+              className='w-full sm:w-auto'
               onClick={() => basketMutation.mutate()}
               disabled={!statusQuery.data?.connected}
               isLoading={basketMutation.isPending}
@@ -276,7 +280,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           </div>
           <div className='space-y-2'>
             {(basketQuery.data?.lines ?? []).map((line) => (
-              <div key={String(line.ingredientId)} className='rounded-xl border border-border p-3 text-sm'>
+              <div key={String(line.ingredientId)} className='rounded-2xl border border-border/80 bg-background/50 p-3 text-sm'>
                 <div className='flex items-start justify-between gap-2'>
                   <div>
                     <div className='font-medium'>{line.name}</div>
@@ -335,6 +339,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           <Button
             type='button'
             variant='secondary'
+            className='w-full sm:w-auto'
             disabled={!basketQuery.data}
             isLoading={instamartReviewMutation.isPending}
             loadingText='Preparing review…'
@@ -342,8 +347,8 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           >
             Review Instamart cart sync
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <ResponsiveOverlay
         open={Boolean(review)}

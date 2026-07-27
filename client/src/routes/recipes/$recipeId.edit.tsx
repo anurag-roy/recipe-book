@@ -1,9 +1,10 @@
 import { AppShell } from '@client/components/app-shell';
 import { RecipeForm, formToPayload, recipeToForm } from '@client/components/recipe-form';
-import { Card, CardContent, CardHeader, CardTitle } from '@client/components/ui/card';
+import { Button } from '@client/components/ui/button';
 import { recipeQueryOptions, updateRecipe } from '@client/lib/recipes';
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { ArrowLeftIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/recipes/$recipeId/edit')({
@@ -29,19 +30,28 @@ function EditRecipePage() {
   });
 
   return (
-    <AppShell title='Edit recipe'>
-      <Card className='mx-auto max-w-3xl'>
-        <CardHeader>
-          <CardTitle>{recipe.title}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RecipeForm
-            initial={recipeToForm(recipe)}
-            submitting={mutation.isPending}
-            onSubmit={(form) => mutation.mutate(formToPayload(form))}
-          />
-        </CardContent>
-      </Card>
+    <AppShell
+      title='Edit recipe'
+      subtitle={recipe.title}
+      back={
+        <Button
+          render={<Link to='/recipes/$recipeId' params={{ recipeId }} />}
+          size='icon-sm'
+          variant='ghost'
+          aria-label='Back to recipe'
+          className='-ml-1'
+        >
+          <ArrowLeftIcon />
+        </Button>
+      }
+    >
+      <section className='mx-auto max-w-3xl rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-6'>
+        <RecipeForm
+          initial={recipeToForm(recipe)}
+          submitting={mutation.isPending}
+          onSubmit={(form) => mutation.mutate(formToPayload(form))}
+        />
+      </section>
     </AppShell>
   );
 }
