@@ -104,17 +104,18 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
       if (!review) {
         throw new Error('No review to confirm');
       }
-      if (review.kind === 'food') {
-        return confirmFoodReview(recipe.id!, review.id, review.payloadHash);
-      }
-      return confirmInstamartReview(recipe.id!, review.id, review.payloadHash);
+      const kind = review.kind;
+      const cart =
+        kind === 'food'
+          ? await confirmFoodReview(recipe.id!, review.id, review.payloadHash)
+          : await confirmInstamartReview(recipe.id!, review.id, review.payloadHash);
+      return { kind, cart };
     },
     onSuccess: async (result) => {
-      const kind = review?.kind ?? 'food';
       setReview(null);
-      setSyncedCart({ kind, cart: result });
+      setSyncedCart(result);
       toast.success(
-        kind === 'food'
+        result.kind === 'food'
           ? 'Food cart updated on Swiggy. Finish checkout in the Swiggy app.'
           : 'Instamart cart updated on Swiggy. Finish checkout in the Swiggy app.'
       );
