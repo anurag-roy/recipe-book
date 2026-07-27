@@ -60,7 +60,14 @@ export async function generateFoodOffers(recipeId: number, addressId: string) {
   return parseJson<FoodProposal>(response);
 }
 
-export async function selectFoodOffer(recipeId: number, offerId: string, customization?: unknown) {
+export async function selectFoodOffer(
+  recipeId: number,
+  offerId: string,
+  customization?: {
+    selectedVariants?: Record<string, string>;
+    selectedAddons?: Record<string, string[]>;
+  }
+) {
   const response = await api.recipes[':id'].food.select.$post({
     param: { id: String(recipeId) },
     json: { offerId, customization },

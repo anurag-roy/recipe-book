@@ -182,11 +182,43 @@ export const dishOfferSchema = z.object({
   distanceKm: z.number().nonnegative().nullable().optional(),
   dietaryMarker: z.string().nullable().optional(),
   availabilityStatus: z.string().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
+  restaurantImageUrl: z.string().nullable().optional(),
   score: z.number().optional(),
   capturedAt: z.string(),
   variants: z.unknown().optional(),
   addons: z.unknown().optional(),
   raw: z.unknown().optional(),
+});
+
+export const foodChoiceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number().nonnegative().nullable().optional(),
+});
+
+export const foodOptionGroupSchema = z.object({
+  groupId: z.string(),
+  groupName: z.string(),
+  min: z.number().int().nonnegative(),
+  max: z.number().int().nullable(),
+  choices: z.array(foodChoiceSchema).min(1),
+});
+
+export const foodCustomizationSchema = z.object({
+  menuItemId: z.string(),
+  itemName: z.string(),
+  variantFormat: z.enum(['variants', 'variantsV2', 'none']),
+  variantGroups: z.array(foodOptionGroupSchema).default([]),
+  addonGroups: z.array(foodOptionGroupSchema).default([]),
+  selectedVariants: z.record(z.string(), z.string()).default({}),
+  selectedAddons: z.record(z.string(), z.array(z.string())).default({}),
+  resolved: z.boolean(),
+});
+
+export const foodCustomizationSelectionSchema = z.object({
+  selectedVariants: z.record(z.string(), z.string()).optional(),
+  selectedAddons: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export const foodProposalSchema = z.object({
@@ -195,7 +227,7 @@ export const foodProposalSchema = z.object({
   addressDisplay: z.string().nullable().optional(),
   offers: z.array(dishOfferSchema).max(5),
   selectedOfferId: z.string().nullable().optional(),
-  selectedCustomization: z.unknown().optional(),
+  selectedCustomization: foodCustomizationSchema.nullable().optional(),
   capturedAt: z.string(),
 });
 
@@ -265,7 +297,7 @@ export const generateFoodOffersSchema = z.object({
 
 export const selectFoodOfferSchema = z.object({
   offerId: z.string().min(1),
-  customization: z.unknown().optional(),
+  customization: foodCustomizationSelectionSchema.optional(),
 });
 
 export const generateBasketSchema = z.object({

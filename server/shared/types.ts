@@ -3,6 +3,8 @@ import type {
   basketLineSchema,
   cartReviewSchema,
   dishOfferSchema,
+  foodCustomizationSchema,
+  foodOptionGroupSchema,
   foodProposalSchema,
   importJobSchema,
   ingredientBasketSchema,
@@ -20,6 +22,8 @@ export type StructuredRecipeLlm = z.infer<typeof structuredRecipeLlmSchema>;
 export type ImportJob = z.infer<typeof importJobSchema>;
 export type SwiggyAddress = z.infer<typeof swiggyAddressSchema>;
 export type DishOffer = z.infer<typeof dishOfferSchema>;
+export type FoodOptionGroup = z.infer<typeof foodOptionGroupSchema>;
+export type FoodCustomization = z.infer<typeof foodCustomizationSchema>;
 export type FoodProposal = z.infer<typeof foodProposalSchema>;
 export type IngredientBasket = z.infer<typeof ingredientBasketSchema>;
 export type BasketLine = z.infer<typeof basketLineSchema>;

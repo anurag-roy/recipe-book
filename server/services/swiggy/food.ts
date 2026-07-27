@@ -1,9 +1,15 @@
-import type { DishOffer, FoodProposal } from '@shared/types';
+import type { DishOffer, FoodCustomization, FoodProposal } from '@shared/types';
 import { db } from '@server/db';
 import { cartReviews, foodProposals, recipes } from '@server/db/schema';
 import { randomUrlSafe, sha256 } from '@server/lib/crypto-hash';
 import { and, eq, isNull } from 'drizzle-orm';
 import { ensureAddressSelected } from './addresses';
+import {
+  applyCustomizationSelection,
+  buildCartItemFromCustomization,
+  fetchOfferCustomization,
+  isCustomizationResolved,
+} from './customization';
 import { callSwiggyTool } from './mcp';
 import { rankDishOffers } from './ranking';
 
@@ -50,6 +56,12 @@ function asOffers(value: unknown): DishOffer[] {
     const availabilityStatus =
       asString(source.availabilityStatus) ??
       (typeof inStock === 'number' ? (inStock > 0 ? 'available' : 'unavailable') : null);
+    const rawImage =
+      asString(source.imageUrl ?? source.image_url ?? source.cloudinaryImageId ?? source.imageId) ??
+      null;
+    const rawRestaurantImage =
+      asString(source.restaurantImageUrl ?? source.restaurant_image_url ?? source.restaurantCloudinaryImageId) ??
+      null;
     return [
       {
         id: `${restaurantId}:${menuItemId}`,
@@ -63,6 +75,8 @@ function asOffers(value: unknown): DishOffer[] {
         etaMinutes: asNumber(source.etaMinutes ?? source.eta_minutes ?? source.sla),
         distanceKm: asNumber(source.distanceKm ?? source.distance_km ?? source.distance),
         availabilityStatus,
+        imageUrl: toMediaUrl(rawImage),
+        restaurantImageUrl: toMediaUrl(rawRestaurantImage),
         capturedAt: new Date().toISOString(),
         variants: source.variants,
         addons: source.addons,
@@ -70,6 +84,58 @@ function asOffers(value: unknown): DishOffer[] {
       },
     ];
   });
+}
+
+function toMediaUrl(value: string | null): string | null {
+  if (!value) return null;
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `https://media-assets.swiggy.com/swiggy/image/upload/${value}`;
+}
+
+async function enrichRestaurantImages(addressId: string, offers: DishOffer[]): Promise<DishOffer[]> {
+  const missing = [...new Map(
+    offers
+      .filter((offer) => !offer.restaurantImageUrl)
+      .map((offer) => [offer.restaurantId, offer.restaurantName] as const)
+  ).entries()];
+  if (missing.length === 0) return offers;
+
+  const images = new Map<string, string>();
+  await Promise.all(
+    missing.map(async ([restaurantId, restaurantName]) => {
+      try {
+        const result = await callSwiggyTool('food', 'search_restaurants', {
+          addressId,
+          query: restaurantName,
+        });
+        const root = result && typeof result === 'object' ? (result as Record<string, unknown>) : null;
+        const list = Array.isArray(root?.restaurants)
+          ? root.restaurants
+          : Array.isArray((root?.data as { restaurants?: unknown } | undefined)?.restaurants)
+            ? ((root?.data as { restaurants: unknown[] }).restaurants)
+            : [];
+        const match = list.find((entry) => {
+          if (!entry || typeof entry !== 'object') return false;
+          const id = asString((entry as Record<string, unknown>).id ?? (entry as Record<string, unknown>).restaurant_id);
+          return id === restaurantId;
+        }) as Record<string, unknown> | undefined;
+        const imageUrl = toMediaUrl(
+          asString(match?.imageUrl ?? match?.image_url ?? match?.cloudinaryImageId) ?? null
+        );
+        if (imageUrl) {
+          images.set(restaurantId, imageUrl);
+        }
+      } catch {
+        // Restaurant imagery is best-effort; offers still work without it.
+      }
+    })
+  );
+
+  if (images.size === 0) return offers;
+  return offers.map((offer) => ({
+    ...offer,
+    restaurantImageUrl: offer.restaurantImageUrl ?? images.get(offer.restaurantId) ?? null,
+  }));
 }
 
 async function proposal(recipeId: number): Promise<FoodProposal | null> {
@@ -107,7 +173,7 @@ export async function generateDishOffers(recipeId: number, addressId: string): P
     queries.map((query) => callSwiggyTool('food', 'search_menu', { addressId, query }))
   );
   const seen = new Set<string>();
-  const offers = rankDishOffers(
+  const ranked = rankDishOffers(
     results
       .flatMap(asOffers)
       .filter((offer) => !offer.availabilityStatus || /open|available/i.test(offer.availabilityStatus))
@@ -117,6 +183,7 @@ export async function generateDishOffers(recipeId: number, addressId: string): P
         return true;
       })
   ).slice(0, 5);
+  const offers = await enrichRestaurantImages(addressId, ranked);
   const saved: FoodProposal = {
     recipeId,
     addressId,
@@ -151,20 +218,169 @@ export async function generateDishOffers(recipeId: number, addressId: string): P
 
 export const getFoodProposal = proposal;
 
-export async function selectOffer(recipeId: number, offerId: string, customization?: unknown): Promise<FoodProposal> {
+export async function selectOffer(
+  recipeId: number,
+  offerId: string,
+  selection?: {
+    selectedVariants?: Record<string, string>;
+    selectedAddons?: Record<string, string[]>;
+  }
+): Promise<FoodProposal> {
   const current = await requireProposal(recipeId);
-  if (!current.offers.some((offer) => offer.id === offerId)) {
+  const offer = current.offers.find((candidate) => candidate.id === offerId);
+  if (!offer) {
     throw new Error('Offer is not part of the current proposal');
   }
+
+  let customization: FoodCustomization;
+  if (current.selectedOfferId === offerId && current.selectedCustomization) {
+    customization = current.selectedCustomization;
+    if (selection) {
+      customization = applyCustomizationSelection(customization, selection);
+    }
+  } else {
+    customization = await fetchOfferCustomization(offer, current.addressId);
+    if (selection) {
+      customization = applyCustomizationSelection(customization, selection);
+    }
+  }
+
   await db
     .update(foodProposals)
     .set({
       selectedOfferId: offerId,
-      selectedCustomizationJson: customization === undefined ? null : JSON.stringify(customization),
+      selectedCustomizationJson: JSON.stringify(customization),
       updatedAt: new Date().toISOString(),
     })
     .where(eq(foodProposals.recipeId, recipeId));
   return { ...current, selectedOfferId: offerId, selectedCustomization: customization };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
+}
+
+function foodCartPayload(result: unknown): Record<string, unknown> | null {
+  const root = asRecord(result);
+  if (!root) return null;
+  const nested = asRecord(root.data);
+  if (nested && (nested.items !== undefined || nested.cart_id !== undefined || nested.result !== undefined)) {
+    return nested;
+  }
+  if (root.items !== undefined || root.cart_id !== undefined) {
+    return root;
+  }
+  return nested ?? root;
+}
+
+function assertFoodCartSynced(result: unknown): void {
+  const root = asRecord(result);
+  if (!root) {
+    throw new Error('Swiggy returned an empty cart response');
+  }
+  const errorCodes = Array.isArray(root.errorCodes) ? root.errorCodes : [];
+  if (root.successful === false || root.statusCode === 1 || errorCodes.length > 0) {
+    throw new Error(
+      asString(root.statusMessage) ?? asString(root.titleMessage) ?? 'Food cart sync failed on Swiggy'
+    );
+  }
+  const data = foodCartPayload(result);
+  const items = data?.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('Swiggy cart is empty after sync. This item may need required customizations.');
+  }
+}
+
+function requiredAddonsFromUpdate(result: unknown): {
+  auto: Array<{ group_id: string; choice_id: string; name?: string }>;
+  unresolved: string[];
+} {
+  const data = foodCartPayload(result);
+  const items = Array.isArray(data?.items) ? data.items : [];
+  const auto: Array<{ group_id: string; choice_id: string; name?: string }> = [];
+  const unresolved: string[] = [];
+
+  for (const item of items) {
+    const record = asRecord(item);
+    const groups = Array.isArray(record?.valid_addons) ? record.valid_addons : [];
+    for (const group of groups) {
+      const groupRecord = asRecord(group);
+      if (!groupRecord) continue;
+      const minAddons = asNumber(groupRecord.minAddons) ?? 0;
+      if (minAddons <= 0) continue;
+      const maxAddons = asNumber(groupRecord.maxAddons);
+      const maxAllowed = maxAddons !== null && maxAddons > 0 ? maxAddons : null;
+
+      const choices = Array.isArray(groupRecord.choices) ? groupRecord.choices.map(asRecord).filter(Boolean) : [];
+      const selectedCount = choices.filter((choice) => choice && choice.selected === 1).length;
+      if (selectedCount >= minAddons) continue;
+
+      const candidates = choices
+        .filter((choice): choice is Record<string, unknown> => {
+          if (!choice || choice.selected === 1) return false;
+          return (asNumber(choice.inStock) ?? 1) > 0;
+        })
+        .sort((left, right) => (asNumber(right.default) ?? 0) - (asNumber(left.default) ?? 0));
+
+      const needed = Math.min(minAddons - selectedCount, maxAllowed ?? minAddons - selectedCount);
+      const groupName = asString(groupRecord.group_name ?? groupRecord.groupName) ?? 'Required option';
+
+      if (candidates.length === 1 && needed === 1) {
+        const choice = candidates[0]!;
+        const groupId = asString(groupRecord.group_id ?? groupRecord.groupId);
+        const choiceId = asString(choice.id ?? choice.choice_id ?? choice.choiceId);
+        if (groupId && choiceId) {
+          auto.push({
+            group_id: groupId,
+            choice_id: choiceId,
+            ...(asString(choice.name) ? { name: asString(choice.name)! } : {}),
+          });
+          continue;
+        }
+      }
+
+      if (candidates.length < needed) {
+        unresolved.push(`${groupName} (unavailable)`);
+      } else {
+        unresolved.push(groupName);
+      }
+    }
+  }
+
+  return { auto, unresolved };
+}
+
+async function syncFoodCart(payload: Record<string, unknown>): Promise<unknown> {
+  const firstUpdate = await callSwiggyTool('food', 'update_food_cart', payload);
+  const { auto, unresolved } = requiredAddonsFromUpdate(firstUpdate);
+
+  if (unresolved.length > 0) {
+    throw new Error(`Choose required options before syncing: ${unresolved.join(', ')}`);
+  }
+
+  if (auto.length > 0) {
+    const cartItems = Array.isArray(payload.cartItems) ? [...payload.cartItems] : [];
+    const firstItem = asRecord(cartItems[0]);
+    if (!firstItem) {
+      throw new Error('Food cart payload is missing cart items');
+    }
+    const existingAddons = Array.isArray(firstItem.addons) ? firstItem.addons : [];
+    cartItems[0] = {
+      ...firstItem,
+      addons: [...existingAddons, ...auto],
+    };
+    await callSwiggyTool('food', 'update_food_cart', {
+      ...payload,
+      cartItems,
+    });
+  }
+
+  const cart = await callSwiggyTool('food', 'get_food_cart', {
+    addressId: payload.addressId,
+    restaurantName: typeof payload.restaurantName === 'string' ? payload.restaurantName : undefined,
+  });
+  assertFoodCartSynced(cart);
+  return cart;
 }
 
 export async function prepareFoodCartReview(recipeId: number) {
@@ -174,27 +390,30 @@ export async function prepareFoodCartReview(recipeId: number) {
     throw new Error('Select a dish offer before reviewing the cart');
   }
   const liveCart = await callSwiggyTool('food', 'get_food_cart', { addressId: current.addressId });
+  const liveCartData = foodCartPayload(liveCart);
+  const liveRestaurant = asRecord(liveCartData?.restaurant) ?? asRecord(asRecord(liveCart)?.restaurant);
   const cartRestaurantId =
-    liveCart && typeof liveCart === 'object' ? (liveCart as Record<string, unknown>).restaurantId : undefined;
-  const warnings =
-    cartRestaurantId && cartRestaurantId !== selected.restaurantId
-      ? ['Your Food cart contains another restaurant. Confirming will replace it.']
-      : [];
-  const customization =
-    current.selectedCustomization && typeof current.selectedCustomization === 'object'
-      ? (current.selectedCustomization as Record<string, unknown>)
-      : {};
+    asString(liveCartData?.restaurantId) ??
+    asString(liveCartData?.restaurant_id) ??
+    asString(liveRestaurant?.id) ??
+    asString(asRecord(liveCart)?.restaurantId);
+  const cartRestaurantName =
+    asString(liveRestaurant?.name) ?? asString(liveCartData?.restaurantName) ?? asString(liveCartData?.restaurant_name);
+  const warnings: string[] = [];
+  if (cartRestaurantId && cartRestaurantId !== selected.restaurantId) {
+    warnings.push(
+      `Your Food cart currently has ${cartRestaurantName ?? 'another restaurant'}. Confirming will replace it.`
+    );
+  }
+  const customization = current.selectedCustomization;
+  if (!customization || !isCustomizationResolved(customization)) {
+    throw new Error('Resolve required variants and add-ons before reviewing the Food cart');
+  }
   const proposedPayload = {
     addressId: current.addressId,
     restaurantId: selected.restaurantId,
     restaurantName: selected.restaurantName,
-    cartItems: [
-      {
-        menu_item_id: selected.menuItemId,
-        quantity: 1,
-        ...customization,
-      },
-    ],
+    cartItems: [buildCartItemFromCustomization(customization)],
   };
   const payloadHash = await sha256(proposedPayload);
   const id = randomUrlSafe(24);
@@ -224,9 +443,9 @@ export async function prepareFoodCartReview(recipeId: number) {
 }
 
 export async function confirmFoodCartReview(reviewId: string, payloadHash: string): Promise<unknown> {
-  const [review] = await db
-    .update(cartReviews)
-    .set({ consumedAt: new Date().toISOString() })
+  const review = db
+    .select()
+    .from(cartReviews)
     .where(
       and(
         eq(cartReviews.id, reviewId),
@@ -235,14 +454,18 @@ export async function confirmFoodCartReview(reviewId: string, payloadHash: strin
         isNull(cartReviews.consumedAt)
       )
     )
-    .returning();
+    .get();
   if (!review) {
     throw new Error('Cart review is invalid, changed, or already consumed');
   }
+
   const payload = JSON.parse(review.proposedPayloadJson) as Record<string, unknown>;
-  await callSwiggyTool('food', 'update_food_cart', payload);
-  return callSwiggyTool('food', 'get_food_cart', {
-    addressId: review.addressId,
-    restaurantName: typeof payload.restaurantName === 'string' ? payload.restaurantName : undefined,
-  });
+  const cart = await syncFoodCart(payload);
+
+  db.update(cartReviews)
+    .set({ consumedAt: new Date().toISOString() })
+    .where(eq(cartReviews.id, reviewId))
+    .run();
+
+  return cart;
 }
