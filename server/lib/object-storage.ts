@@ -2,6 +2,8 @@ import { env } from '@server/lib/env';
 import { sha256Hex } from '@server/lib/hash';
 import { safeFetch } from '@server/lib/safe-fetch';
 import { S3Client } from 'bun';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const maxImageBytes = 5 * 1024 * 1024;
@@ -47,7 +49,37 @@ export async function putObject(key: string, data: Uint8Array | string, contentT
   await s3.file(key).write(data, { type: contentType });
 }
 
+function contentTypeForDemoAsset(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  switch (ext) {
+    case '.png':
+      return 'image/png';
+    case '.webp':
+      return 'image/webp';
+    case '.gif':
+      return 'image/gif';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+async function getDemoObject(key: string): Promise<{ data: Uint8Array; contentType: string | null }> {
+  const relative = key.slice('demo/'.length);
+  if (!relative || relative.includes('..') || path.isAbsolute(relative)) {
+    throw new Error('Object not found');
+  }
+  const filePath = path.join(process.cwd(), 'server/demo/assets', relative);
+  const data = new Uint8Array(await readFile(filePath));
+  return { data, contentType: contentTypeForDemoAsset(relative) };
+}
+
 export async function getObject(key: string): Promise<{ data: Uint8Array; contentType: string | null }> {
+  if (key.startsWith('demo/')) {
+    return getDemoObject(key);
+  }
   const s3 = createClient();
   const file = s3.file(key);
   const exists = await file.exists();

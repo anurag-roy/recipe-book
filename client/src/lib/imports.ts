@@ -24,7 +24,7 @@ export const importsQueryOptions = queryOptions({
     const active = jobs.some((job) =>
       ['queued', 'fetching', 'extracting', 'structuring', 'copying_image'].includes(job.status)
     );
-    return active ? 2000 : false;
+    return active ? 500 : false;
   },
 });
 

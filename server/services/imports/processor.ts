@@ -1,3 +1,4 @@
+import { DEMO_IMPORT_URL, DEMO_RECIPE_IMAGE_KEY, demoDelay, demoStructuredRecipe, isDemoMode } from '@server/demo';
 import { db } from '@server/db';
 import { importJobs } from '@server/db/schema';
 import { logger } from '@server/lib/logger';
@@ -35,6 +36,49 @@ function setJob(
     .run();
 }
 
+async function processDemoImportJob(
+  jobId: number,
+  job: typeof importJobs.$inferSelect
+): Promise<void> {
+  setJob(jobId, { status: 'fetching', stageMessage: 'Fetching source', error: null });
+  await demoDelay(220);
+
+  const sourceUrl = job.sourceType === 'url' ? (job.sourceUrl ?? DEMO_IMPORT_URL) : DEMO_IMPORT_URL;
+  const fingerprint = `demo-paneer-butter-masala:${jobId}:${Date.now()}`;
+
+  setJob(jobId, { status: 'extracting', stageMessage: 'Extracted recipe evidence' });
+  await demoDelay(260);
+
+  setJob(jobId, { status: 'structuring', stageMessage: 'Structuring recipe' });
+  await demoDelay(320);
+
+  setJob(jobId, { status: 'copying_image', stageMessage: 'Copying recipe image' });
+  await demoDelay(180);
+
+  const recipe = await createRecipe(
+    structuredToWriteInput(demoStructuredRecipe, {
+      sourceUrl,
+      canonicalUrl: `${sourceUrl}#demo-${jobId}`,
+      cleanedText: `${demoStructuredRecipe.title}\n\n${demoStructuredRecipe.description ?? ''}`,
+      contentFingerprint: fingerprint,
+      jsonLdPresent: true,
+      imageObjectKey: DEMO_RECIPE_IMAGE_KEY,
+      imageSourceUrl: sourceUrl,
+      imageContentType: 'image/jpeg',
+      imageWarning: null,
+    })
+  );
+
+  setJob(jobId, {
+    status: 'completed',
+    stageMessage: 'Completed',
+    recipeId: recipe.id ?? null,
+    imageWarning: null,
+    lockedAt: null,
+    completedAt: nowIso(),
+  });
+}
+
 export async function processImportJob(jobId: number): Promise<void> {
   const job = db.select().from(importJobs).where(eq(importJobs.id, jobId)).get();
   if (!job) {
@@ -42,6 +86,11 @@ export async function processImportJob(jobId: number): Promise<void> {
   }
 
   try {
+    if (isDemoMode()) {
+      await processDemoImportJob(jobId, job);
+      return;
+    }
+
     setJob(jobId, { status: 'fetching', stageMessage: 'Fetching source', error: null });
 
     const extracted =

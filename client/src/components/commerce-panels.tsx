@@ -367,7 +367,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           }
         }}
         title={review?.kind === 'food' ? 'Confirm Food cart sync' : 'Confirm Instamart cart sync'}
-        description='This updates your real Swiggy cart. It will not place an order.'
+        description='Review the cart update before syncing. This will not place an order.'
         footer={
           <Button
             type='button'
@@ -398,7 +398,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
           if (!open) setSyncedCart(null);
         }}
         title='Swiggy cart updated'
-        description='Verified with get_food_cart. Finish checkout in the Swiggy app.'
+        description='Your Swiggy cart was updated. Finish checkout in the Swiggy app when you are ready.'
         footer={
           <Button type='button' onClick={() => setSyncedCart(null)}>
             Done
@@ -679,12 +679,20 @@ function SyncedCartSummary({ cart }: { cart: unknown }) {
       <ul className='space-y-2'>
         {items.map((item, index) => {
           const row = item && typeof item === 'object' ? (item as Record<string, unknown>) : {};
+          const name = String(row.name ?? row.productName ?? row.product_name ?? 'Item');
           return (
-            <li key={String(row.menu_item_id ?? index)} className='rounded-xl border border-border bg-muted/40 px-3 py-2'>
-              <div className='font-medium'>{String(row.name ?? 'Item')}</div>
+            <li
+              key={String(row.menu_item_id ?? row.spinId ?? row.spin_id ?? index)}
+              className='rounded-xl border border-border bg-muted/40 px-3 py-2'
+            >
+              <div className='font-medium'>{name}</div>
               <div className='text-muted-foreground'>
                 Qty {String(row.quantity ?? 1)}
-                {row.final_price != null ? ` · ₹${String(row.final_price)}` : ''}
+                {row.final_price != null
+                  ? ` · ₹${String(row.final_price)}`
+                  : row.price != null
+                    ? ` · ₹${String(row.price)}`
+                    : ''}
               </div>
             </li>
           );

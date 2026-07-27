@@ -1,4 +1,5 @@
 import type { SwiggyAddress, SwiggyConnectionStatus } from '@shared/types';
+import { DEMO_ADDRESS, isDemoMode } from '@server/demo';
 import { db } from '@server/db';
 import { appSettings, swiggyOAuthClients, swiggyOAuthStates, swiggyTokens } from '@server/db/schema';
 import { pkceChallenge, randomUrlSafe } from '@server/lib/crypto-hash';
@@ -50,6 +51,16 @@ async function registeredClient() {
 }
 
 export async function startAuthorization(): Promise<{ authorizeUrl: string }> {
+  if (isDemoMode()) {
+    await db
+      .insert(appSettings)
+      .values({ key: 'preferred_address', valueJson: JSON.stringify(DEMO_ADDRESS) })
+      .onConflictDoUpdate({
+        target: appSettings.key,
+        set: { valueJson: JSON.stringify(DEMO_ADDRESS), updatedAt: new Date().toISOString() },
+      });
+    return { authorizeUrl: `${env.APP_BASE_URL}/settings?swiggy=connected` };
+  }
   const client = await registeredClient();
   const state = randomUrlSafe();
   const codeVerifier = randomUrlSafe(48);
@@ -110,6 +121,9 @@ export async function completeAuthorization(code: string, state: string): Promis
 }
 
 export async function getAccessToken(): Promise<string> {
+  if (isDemoMode()) {
+    return 'demo-swiggy-token';
+  }
   const token = (await db.select().from(swiggyTokens).orderBy(desc(swiggyTokens.id)).limit(1))[0];
   if (!token || new Date(token.expiresAt).getTime() <= Date.now()) {
     throw new SwiggyReconnectRequiredError();
@@ -136,6 +150,29 @@ export async function disconnect(): Promise<void> {
 }
 
 export async function getConnectionStatus(): Promise<SwiggyConnectionStatus> {
+  if (isDemoMode()) {
+    const setting = (await db.select().from(appSettings).where(eq(appSettings.key, 'preferred_address')).limit(1))[0];
+    let preferredAddress: SwiggyAddress | null = DEMO_ADDRESS;
+    if (setting) {
+      try {
+        preferredAddress = JSON.parse(setting.valueJson) as SwiggyAddress;
+      } catch {
+        preferredAddress = DEMO_ADDRESS;
+      }
+    } else {
+      await db.insert(appSettings).values({
+        key: 'preferred_address',
+        valueJson: JSON.stringify(DEMO_ADDRESS),
+      });
+    }
+    return {
+      connected: true,
+      expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+      preferredAddress,
+      privacyDisclosure: 'Demo mode is using local Swiggy fixtures. No live Swiggy account is connected.',
+    };
+  }
+
   const token = (await db.select().from(swiggyTokens).orderBy(desc(swiggyTokens.id)).limit(1))[0];
   const setting = (await db.select().from(appSettings).where(eq(appSettings.key, 'preferred_address')).limit(1))[0];
   let preferredAddress: SwiggyAddress | null = null;

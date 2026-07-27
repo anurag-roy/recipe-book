@@ -5,13 +5,15 @@ import { Input } from '@client/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@client/components/ui/tabs';
 import { Textarea } from '@client/components/ui/textarea';
 import { createTextImport, createUrlImport, importsQueryOptions, retryImport } from '@client/lib/imports';
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
-import { LinkIcon, RefreshCwIcon, TextIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { appStatusQueryOptions } from '@client/lib/settings';
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { Link, createFileRoute } from '@tanstack/react-router';
+import { ArrowRightIcon, LinkIcon, RefreshCwIcon, TextIcon } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const TERMINAL_SUCCESS = new Set(['completed', 'duplicate']);
+const ACTIVE = new Set(['queued', 'fetching', 'extracting', 'structuring', 'copying_image']);
 
 export const Route = createFileRoute('/imports')({
   loader: ({ context }) => context.queryClient.ensureQueryData(importsQueryOptions),
@@ -21,9 +23,26 @@ export const Route = createFileRoute('/imports')({
 function ImportsPage() {
   const queryClient = useQueryClient();
   const { data: jobs } = useSuspenseQuery(importsQueryOptions);
+  const { data: appStatus } = useQuery(appStatusQueryOptions);
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
-  const currentJobs = useMemo(() => jobs.filter((job) => !TERMINAL_SUCCESS.has(job.status)), [jobs]);
+  const [demoPrefillDone, setDemoPrefillDone] = useState(false);
+
+  const currentJobs = useMemo(() => jobs.filter((job) => ACTIVE.has(job.status)), [jobs]);
+  const recentJobs = useMemo(
+    () =>
+      [...jobs]
+        .filter((job) => TERMINAL_SUCCESS.has(job.status) || job.status === 'failed')
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, 6),
+    [jobs]
+  );
+
+  useEffect(() => {
+    if (demoPrefillDone || !appStatus?.demoMode || !appStatus.demoImportUrl || url) return;
+    setUrl(appStatus.demoImportUrl);
+    setDemoPrefillDone(true);
+  }, [appStatus, demoPrefillDone, url]);
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ['imports'] });
@@ -33,7 +52,6 @@ function ImportsPage() {
   const urlMutation = useMutation({
     mutationFn: createUrlImport,
     onSuccess: async () => {
-      setUrl('');
       toast.success('Import started');
       await invalidate();
     },
@@ -67,6 +85,12 @@ function ImportsPage() {
             <h2 className='font-heading text-base font-semibold tracking-tight'>Import a recipe</h2>
             <p className='mt-1 text-sm text-muted-foreground'>Public HTML pages or pasted recipe text.</p>
           </div>
+          {appStatus?.demoMode ? (
+            <div className='mb-4 rounded-2xl bg-accent/60 px-3.5 py-3 text-sm text-accent-foreground'>
+              Demo mode is on. Importing any URL will create a restaurant-style Paneer Butter Masala with Indian pantry
+              staples (grams, Kashmiri chilli, kasuri methi).
+            </div>
+          ) : null}
           <Tabs defaultValue='url'>
             <TabsList className='mb-4 grid w-full grid-cols-2'>
               <TabsTrigger value='url'>
@@ -138,30 +162,93 @@ function ImportsPage() {
               {currentJobs.map((job) => (
                 <li key={job.id} className='rounded-2xl border border-border/80 bg-background/60 p-3.5'>
                   <div className='mb-2 flex items-center justify-between gap-2'>
-                    <Badge variant={job.status === 'failed' ? 'destructive' : 'secondary'}>{job.status}</Badge>
+                    <Badge variant='secondary'>{job.status}</Badge>
                     <span className='text-xs text-muted-foreground'>{job.sourceType}</span>
                   </div>
                   <p className='truncate text-sm font-medium'>{job.sourceUrl ?? 'Pasted text'}</p>
                   {job.stageMessage ? <p className='mt-1 text-xs text-muted-foreground'>{job.stageMessage}</p> : null}
-                  {job.error ? <p className='mt-1 text-xs text-destructive'>{job.error}</p> : null}
-                  {job.status === 'failed' ? (
-                    <Button
-                      size='sm'
-                      className='mt-3'
-                      onClick={() => retryMutation.mutate(job.id)}
-                      isLoading={retryMutation.isPending && retryMutation.variables === job.id}
-                      loadingText='Retrying…'
-                    >
-                      <RefreshCwIcon />
-                      Retry
-                    </Button>
-                  ) : null}
+                  <div className='mt-3 h-1.5 overflow-hidden rounded-full bg-muted'>
+                    <div
+                      className='h-full rounded-full bg-primary transition-[width] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]'
+                      style={{ width: `${stageProgress(job.status)}%` }}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+
+          <div className='mt-6'>
+            <div className='mb-3 flex items-center justify-between gap-2'>
+              <h3 className='font-heading text-sm font-semibold tracking-tight'>Recent</h3>
+              <Badge variant='secondary'>{recentJobs.length}</Badge>
+            </div>
+            {recentJobs.length === 0 ? (
+              <p className='text-sm text-muted-foreground'>Completed imports will show up here.</p>
+            ) : (
+              <ul className='space-y-3'>
+                {recentJobs.map((job) => {
+                  const recipeId = job.recipeId ?? job.duplicateOfRecipeId;
+                  return (
+                    <li key={job.id} className='rounded-2xl border border-border/80 bg-background/60 p-3.5'>
+                      <div className='mb-2 flex items-center justify-between gap-2'>
+                        <Badge variant={job.status === 'failed' ? 'destructive' : 'secondary'}>{job.status}</Badge>
+                        <span className='text-xs text-muted-foreground'>{job.sourceType}</span>
+                      </div>
+                      <p className='truncate text-sm font-medium'>{job.sourceUrl ?? 'Pasted text'}</p>
+                      {job.stageMessage ? (
+                        <p className='mt-1 text-xs text-muted-foreground'>{job.stageMessage}</p>
+                      ) : null}
+                      {job.error ? <p className='mt-1 text-xs text-destructive'>{job.error}</p> : null}
+                      <div className='mt-3 flex flex-wrap gap-2'>
+                        {recipeId ? (
+                          <Button
+                            size='sm'
+                            nativeButton={false}
+                            render={<Link to='/recipes/$recipeId' params={{ recipeId: String(recipeId) }} />}
+                          >
+                            Open recipe
+                            <ArrowRightIcon />
+                          </Button>
+                        ) : null}
+                        {job.status === 'failed' ? (
+                          <Button
+                            size='sm'
+                            variant='outline'
+                            onClick={() => retryMutation.mutate(job.id)}
+                            isLoading={retryMutation.isPending && retryMutation.variables === job.id}
+                            loadingText='Retrying…'
+                          >
+                            <RefreshCwIcon />
+                            Retry
+                          </Button>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </section>
       </div>
     </AppShell>
   );
+}
+
+function stageProgress(status: string): number {
+  switch (status) {
+    case 'queued':
+      return 8;
+    case 'fetching':
+      return 28;
+    case 'extracting':
+      return 52;
+    case 'structuring':
+      return 76;
+    case 'copying_image':
+      return 92;
+    default:
+      return 100;
+  }
 }
