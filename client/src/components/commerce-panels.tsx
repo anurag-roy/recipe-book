@@ -28,7 +28,7 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
   const basketQuery = useQuery(basketQueryOptions(recipe.id!));
   const [servings, setServings] = useState(String(recipe.servings ?? 2));
   const [review, setReview] = useState<CartReview | null>(null);
-  const [syncedCart, setSyncedCart] = useState<unknown>(null);
+  const [syncedCart, setSyncedCart] = useState<{ kind: 'food' | 'instamart'; cart: unknown } | null>(null);
 
   const addressId = statusQuery.data?.preferredAddress?.addressId;
   const customization = foodQuery.data?.selectedCustomization ?? null;
@@ -110,9 +110,14 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
       return confirmInstamartReview(recipe.id!, review.id, review.payloadHash);
     },
     onSuccess: async (result) => {
+      const kind = review?.kind ?? 'food';
       setReview(null);
-      setSyncedCart(result);
-      toast.success('Cart updated on Swiggy. Finish checkout in the Swiggy app.');
+      setSyncedCart({ kind, cart: result });
+      toast.success(
+        kind === 'food'
+          ? 'Food cart updated on Swiggy. Finish checkout in the Swiggy app.'
+          : 'Instamart cart updated on Swiggy. Finish checkout in the Swiggy app.'
+      );
     },
     onError: (error) => toast.error(error.message),
   });
@@ -360,14 +365,19 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
       </section>
 
       <ResponsiveOverlay
+        key={review ? `review-${review.kind}-${review.id}` : 'review-closed'}
         open={Boolean(review)}
         onOpenChange={(open) => {
           if (!open) {
             setReview(null);
           }
         }}
-        title={review?.kind === 'food' ? 'Confirm Food cart sync' : 'Confirm Instamart cart sync'}
-        description='Review the cart update before syncing. This will not place an order.'
+        title={review?.kind === 'instamart' ? 'Confirm Instamart cart sync' : 'Confirm Food cart sync'}
+        description={
+          review?.kind === 'instamart'
+            ? 'Review grocery items before syncing your Instamart cart. This will not place an order.'
+            : 'Review the dish before syncing your Food cart. This will not place an order.'
+        }
         footer={
           <Button
             type='button'
@@ -393,19 +403,24 @@ export function CommercePanels({ recipe }: { recipe: Recipe }) {
       </ResponsiveOverlay>
 
       <ResponsiveOverlay
+        key={syncedCart ? `synced-${syncedCart.kind}` : 'synced-closed'}
         open={Boolean(syncedCart)}
         onOpenChange={(open) => {
           if (!open) setSyncedCart(null);
         }}
-        title='Swiggy cart updated'
-        description='Your Swiggy cart was updated. Finish checkout in the Swiggy app when you are ready.'
+        title={syncedCart?.kind === 'instamart' ? 'Instamart cart updated' : 'Food cart updated'}
+        description={
+          syncedCart?.kind === 'instamart'
+            ? 'Your Instamart cart was updated. Finish checkout in the Swiggy app when you are ready.'
+            : 'Your Food cart was updated. Finish checkout in the Swiggy app when you are ready.'
+        }
         footer={
           <Button type='button' onClick={() => setSyncedCart(null)}>
             Done
           </Button>
         }
       >
-        <SyncedCartSummary cart={syncedCart} />
+        <SyncedCartSummary cart={syncedCart?.cart} />
       </ResponsiveOverlay>
     </div>
   );
