@@ -79,8 +79,8 @@ function ImportsPage() {
 
   return (
     <AppShell title='Imports' subtitle='Turn a blog post or paste into a recipe'>
-      <div className='grid gap-4 lg:grid-cols-[1.25fr_1fr] lg:gap-6'>
-        <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+      <div className='grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-6'>
+        <section className='min-w-0 rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
           <div className='mb-4'>
             <h2 className='font-heading text-base font-semibold tracking-tight'>Import a recipe</h2>
             <p className='mt-1 text-sm text-muted-foreground'>Public HTML pages or pasted recipe text.</p>
@@ -142,7 +142,7 @@ function ImportsPage() {
           </Tabs>
         </section>
 
-        <section className='rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
+        <section className='min-w-0 overflow-hidden rounded-[1.75rem] bg-card p-4 shadow-sm ring-1 ring-foreground/5 sm:p-5'>
           <div className='mb-4 flex items-center justify-between gap-2'>
             <h2 className='font-heading text-base font-semibold tracking-tight'>Current jobs</h2>
             <Badge variant='secondary'>{currentJobs.length}</Badge>
@@ -154,12 +154,14 @@ function ImportsPage() {
           ) : (
             <ul className='space-y-3'>
               {currentJobs.map((job) => (
-                <li key={job.id} className='rounded-2xl border border-border/80 bg-background/60 p-3.5'>
+                <li key={job.id} className='min-w-0 rounded-2xl border border-border/80 bg-background/60 p-3.5'>
                   <div className='mb-2 flex items-center justify-between gap-2'>
                     <Badge variant='secondary'>{job.status}</Badge>
-                    <span className='text-xs text-muted-foreground'>{job.sourceType}</span>
+                    <span className='shrink-0 text-xs text-muted-foreground'>{job.sourceType}</span>
                   </div>
-                  <p className='truncate text-sm font-medium'>{job.sourceUrl ?? 'Pasted text'}</p>
+                  <p className='truncate text-sm font-medium' title={job.sourceUrl ?? undefined}>
+                    {job.sourceUrl ?? 'Pasted text'}
+                  </p>
                   {job.stageMessage ? <p className='mt-1 text-xs text-muted-foreground'>{job.stageMessage}</p> : null}
                   <div className='mt-3 h-1.5 overflow-hidden rounded-full bg-muted'>
                     <div
@@ -172,7 +174,7 @@ function ImportsPage() {
             </ul>
           )}
 
-          <div className='mt-6'>
+          <div className='mt-6 min-w-0'>
             <div className='mb-3 flex items-center justify-between gap-2'>
               <h3 className='font-heading text-sm font-semibold tracking-tight'>Recent</h3>
               <Badge variant='secondary'>{recentJobs.length}</Badge>
@@ -184,12 +186,14 @@ function ImportsPage() {
                 {recentJobs.map((job) => {
                   const recipeId = job.recipeId ?? job.duplicateOfRecipeId;
                   return (
-                    <li key={job.id} className='rounded-2xl border border-border/80 bg-background/60 p-3.5'>
+                    <li key={job.id} className='min-w-0 rounded-2xl border border-border/80 bg-background/60 p-3.5'>
                       <div className='mb-2 flex items-center justify-between gap-2'>
                         <Badge variant={job.status === 'failed' ? 'destructive' : 'secondary'}>{job.status}</Badge>
-                        <span className='text-xs text-muted-foreground'>{job.sourceType}</span>
+                        <span className='shrink-0 text-xs text-muted-foreground'>{job.sourceType}</span>
                       </div>
-                      <p className='truncate text-sm font-medium'>{job.sourceUrl ?? 'Pasted text'}</p>
+                      <p className='truncate text-sm font-medium' title={job.sourceUrl ?? undefined}>
+                        {job.sourceUrl ?? 'Pasted text'}
+                      </p>
                       {job.stageMessage ? (
                         <p className='mt-1 text-xs text-muted-foreground'>{job.stageMessage}</p>
                       ) : null}
