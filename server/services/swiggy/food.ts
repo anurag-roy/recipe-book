@@ -88,7 +88,14 @@ function asOffers(value: unknown): DishOffer[] {
 
 function toMediaUrl(value: string | null): string | null {
   if (!value) return null;
-  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  if (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('/') ||
+    value.startsWith('data:')
+  ) {
+    return value;
+  }
   return `https://media-assets.swiggy.com/swiggy/image/upload/${value}`;
 }
 

@@ -1,4 +1,5 @@
 import type { ImportJob } from '@shared/types';
+import { isDemoMode } from '@server/demo';
 import { db } from '@server/db';
 import { importJobs } from '@server/db/schema';
 import { logger } from '@server/lib/logger';
@@ -88,11 +89,12 @@ export function startImportWorker(): void {
   if (timer) {
     return;
   }
+  const intervalMs = isDemoMode() ? 500 : 2000;
   timer = setInterval(() => {
     void tick();
-  }, 2000);
+  }, intervalMs);
   void tick();
-  logger.info('Import worker started');
+  logger.info(`Import worker started${isDemoMode() ? ' (demo mode)' : ''}`);
 }
 
 export async function createImportJob(input: {

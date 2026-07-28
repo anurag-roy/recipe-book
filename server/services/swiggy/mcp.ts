@@ -1,3 +1,5 @@
+import { demoDelay, isDemoMode } from '@server/demo';
+import { getDemoToolResult } from '@server/demo/swiggy-fixtures';
 import { env } from '@server/lib/env';
 import { getAccessToken } from './oauth';
 
@@ -67,6 +69,10 @@ export async function callSwiggyTool(
 ): Promise<unknown> {
   if (!allowedTools[server].has(name) || prohibitedTools.test(name)) {
     throw new Error(`Swiggy tool "${name}" is not permitted`);
+  }
+  if (isDemoMode()) {
+    await demoDelay(120);
+    return getDemoToolResult(server, name, args);
   }
   const token = await getAccessToken();
   const response = await fetch(endpoint(server), {

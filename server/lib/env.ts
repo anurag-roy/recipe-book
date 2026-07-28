@@ -4,6 +4,10 @@ import { z } from 'zod';
 const envSchema = z.object({
   PORT: z.coerce.number().default(3000),
   DATABASE_URL: z.string().default('.data/database.db'),
+  DEMO_MODE: z
+    .enum(['true', 'false', '1', '0'])
+    .default('false')
+    .transform((value) => value === 'true' || value === '1'),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_MODEL: z.string().default('gpt-5.4-nano'),
   OPENAI_TRACING: z
