@@ -78,7 +78,7 @@ export function AppShell({
         </aside>
 
         <div className='flex min-w-0 flex-1 flex-col'>
-          <header className='sticky top-0 z-30 border-b border-border/60 bg-background/85 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-xl md:border-border/40 md:bg-background/90 md:px-0 md:pt-5 md:pb-3'>
+          <header className='sticky top-0 z-40 border-b border-border/70 bg-background px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 md:px-0 md:pt-5 md:pb-3'>
             <div className='flex items-start justify-between gap-3'>
               <div className='min-w-0 flex-1'>
                 {!back ? (
