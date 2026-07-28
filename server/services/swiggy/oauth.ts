@@ -169,7 +169,7 @@ export async function getConnectionStatus(): Promise<SwiggyConnectionStatus> {
       connected: true,
       expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
       preferredAddress,
-      privacyDisclosure: 'Demo mode is using local Swiggy fixtures. No live Swiggy account is connected.',
+      privacyDisclosure,
     };
   }
 

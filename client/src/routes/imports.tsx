@@ -85,12 +85,6 @@ function ImportsPage() {
             <h2 className='font-heading text-base font-semibold tracking-tight'>Import a recipe</h2>
             <p className='mt-1 text-sm text-muted-foreground'>Public HTML pages or pasted recipe text.</p>
           </div>
-          {appStatus?.demoMode ? (
-            <div className='mb-4 rounded-2xl bg-accent/60 px-3.5 py-3 text-sm text-accent-foreground'>
-              Demo mode is on. Importing any URL will create a restaurant-style Paneer Butter Masala with Indian pantry
-              staples (grams, Kashmiri chilli, kasuri methi).
-            </div>
-          ) : null}
           <Tabs defaultValue='url'>
             <TabsList className='mb-4 grid w-full grid-cols-2'>
               <TabsTrigger value='url'>
